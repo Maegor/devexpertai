@@ -1,0 +1,152 @@
+import enum
+import uuid
+from datetime import datetime, date
+
+from sqlalchemy import String, Text, Boolean, Enum as PgEnum, DateTime, Date, ForeignKey, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from database import Base
+
+
+class InternalRole(str, enum.Enum):
+    Sales = "Sales"
+    Finance = "Finance"
+    Admin = "Admin"
+
+
+internal_role_enum = PgEnum(
+    InternalRole,
+    name="internal_role",
+    create_type=True,
+)
+
+
+
+class InternalUser(Base):
+    __tablename__ = "internal_users"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    totp_secret: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    role: Mapped[InternalRole] = mapped_column(
+        internal_role_enum, nullable=False, default=InternalRole.Sales
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class PartnerStatus(str, enum.Enum):
+    PendingReview = "Pending Review"
+    Active = "Active"
+    Suspended = "Suspended"
+    Inactive = "Inactive"
+    Rejected = "Rejected"
+
+
+partner_status_enum = PgEnum(
+    PartnerStatus,
+    name="partner_status",
+    create_type=True,
+)
+
+
+class Partner(Base):
+    __tablename__ = "partners"
+
+    # System Identifiers
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    fp_promoter_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    parent_partner_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("partners.id"), nullable=True
+    )
+
+    # Profile and Basic Data
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    website: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    collaboration_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assigned_sales_rep_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("internal_users.id"), nullable=True
+    )
+    language_preference: Mapped[str] = mapped_column(String(10), default="en")
+
+    # Operational and Commercial Configuration
+    referral_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    deals_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[PartnerStatus] = mapped_column(
+        partner_status_enum, nullable=False, default=PartnerStatus.PendingReview
+    )
+
+    # Terms and Conditions
+    tc_version_accepted: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    tc_acceptance_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    tc_acceptance_ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    tc_accepted_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Billing and Accounting
+    qb_account_referral: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    qb_account_fixed: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    self_billing_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Audit Trail
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    parent: Mapped["Partner | None"] = relationship("Partner", remote_side="Partner.id", foreign_keys=[parent_partner_id])
+    assigned_sales_rep: Mapped["InternalUser | None"] = relationship("InternalUser", foreign_keys=[assigned_sales_rep_id])
+    billing_entities: Mapped[list["BillingEntity"]] = relationship("BillingEntity", back_populates="partner", cascade="all, delete-orphan")
+
+
+class BillingEntity(Base):
+    __tablename__ = "billing_entities"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    partner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False
+    )
+
+    # Legal Data
+    entity_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    country: Mapped[str] = mapped_column(String(100), nullable=False)
+    tax_id_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    vat_registered: Mapped[bool] = mapped_column(Boolean, default=False)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Banking Details
+    encrypted_banking_details: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # History Control
+    effective_from: Mapped[date] = mapped_column(Date, nullable=False)
+    effective_until: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    # Audit Trail
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+
+    # Relationships
+    partner: Mapped["Partner"] = relationship("Partner", back_populates="billing_entities")
