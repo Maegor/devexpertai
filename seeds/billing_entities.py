@@ -31,16 +31,6 @@ ENTITIES = [
     ("Zenith Global FZE",              "AE", "AE-TRN-123456",   "DIFC Gate Building, Dubai"),
     ("BlueSky Analytics NZ",           "NZ", "NZ-GST-123456",   "Level 5, 1 Queen St, Auckland 1010"),
     ("Atlas Commerce India",           "IN", "GSTIN-29ABCDE",   "Bandra Kurla Complex, Mumbai 400051"),
-    ("Maple Partners Inc.",            "CA", "BN-987654321",    "1000 De La Gauchetière W, Montreal QC"),
-    ("Delta Systems Korea",            "KR", "KR-220-81-12345", "Teheran-ro 152, Gangnam-gu, Seúl"),
-    ("Vantage Group South Africa",     "ZA", "ZA-4123456789",   "1 Simmonds St, Johannesburg 2001"),
-    ("Luminary Oy",                    "FI", "FI-2345678-9",    "Mannerheimintie 12, 00100 Helsinki"),
-    ("Cascade Digital Belgium",        "BE", "BE0123456789",    "Boulevard du Régent 37, 1000 Bruselas"),
-    ("PineCrest AS Norway",            "NO", "NO-123456789MVA", "Karl Johans gate 1, 0154 Oslo"),
-    ("GoldPath AG Switzerland",        "CH", "CHE-123.456.789", "Bahnhofstrasse 10, 8001 Zúrich"),
-    ("Silverline Media Austria",       "AT", "ATU12345678",     "Stephansplatz 1, 1010 Viena"),
-    ("Caspian Tech Kazakhstan",        "KZ", "KZ-BIN-12345678", "Al-Farabi Ave 77, Almaty 050059"),
-    ("Voyager Agency Denmark",         "DK", "DK-12345678",     "Strøget 1, 1050 Copenhague"),
 ]
 
 BANKING_TEMPLATE = "ENCRYPTED::IBAN={iban}|BIC={bic}|BANK={bank}"
@@ -73,8 +63,8 @@ async def run():
 
         print(f"Partners encontrados: {len(partners)}")
 
-        # Asignar un partner distinto a cada una de las 30 entidades
-        selected_partners = random.sample(partners, min(30, len(partners)))
+        # Asignar un partner distinto a cada una de las 20 entidades
+        selected_partners = random.sample(partners, min(20, len(partners)))
 
         created = 0
         skipped = 0
@@ -101,10 +91,10 @@ async def run():
                 partner_id=partner.id,
                 entity_name=entity_name,
                 country=country,
-                tax_id_number=tax_id,
+                tax_identification_number=tax_id,
                 vat_registered=random.choice([True, False]),
                 address=address,
-                encrypted_banking_details=BANKING_TEMPLATE.format(iban=iban, bic=bic, bank=bank),
+                banking_details=BANKING_TEMPLATE.format(iban=iban, bic=bic, bank=bank),
                 effective_from=effective_from,
                 effective_until=effective_until,
             )

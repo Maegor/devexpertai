@@ -8,10 +8,10 @@ class BillingEntityCreate(BaseModel):
     partner_id: uuid.UUID
     entity_name: str
     country: str
-    tax_id_number: str | None = None
+    tax_identification_number: str | None = None
     vat_registered: bool = False
     address: str | None = None
-    encrypted_banking_details: str | None = None
+    banking_details: str | None = None
     effective_from: date
     effective_until: date | None = None
 
@@ -19,10 +19,10 @@ class BillingEntityCreate(BaseModel):
 class BillingEntityUpdate(BaseModel):
     entity_name: str | None = None
     country: str | None = None
-    tax_id_number: str | None = None
+    tax_identification_number: str | None = None
     vat_registered: bool | None = None
     address: str | None = None
-    encrypted_banking_details: str | None = None
+    banking_details: str | None = None
     effective_from: date | None = None
     effective_until: date | None = None
 
@@ -32,10 +32,10 @@ class BillingEntityResponse(BaseModel):
     partner_id: uuid.UUID
     entity_name: str
     country: str
-    tax_id_number: str | None
+    tax_identification_number: str | None
     vat_registered: bool
     address: str | None
-    encrypted_banking_details: str | None
+    banking_details: str | None
     effective_from: date
     effective_until: date | None
     created_at: datetime

@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, date
 
-from sqlalchemy import String, Text, Boolean, Enum as PgEnum, DateTime, Date, ForeignKey, func
+from sqlalchemy import String, Text, Boolean, Enum as PgEnum, DateTime, Date, ForeignKey, Numeric, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
@@ -119,6 +119,27 @@ class Partner(Base):
     billing_entities: Mapped[list["BillingEntity"]] = relationship("BillingEntity", back_populates="partner", cascade="all, delete-orphan")
 
 
+class InvoiceType(str, enum.Enum):
+    Variable = "Variable"
+    Fixed    = "Fixed"
+
+
+invoice_type_enum = PgEnum(InvoiceType, name="invoice_type", create_type=True)
+
+
+class InvoiceStatus(str, enum.Enum):
+    Sent           = "Sent"
+    UnderReview    = "Under review"
+    Approved       = "Approved"
+    PendingPayment = "Pending payment"
+    Paid           = "Paid"
+    Rejected       = "Rejected"
+    Cancelled      = "Cancelled"
+
+
+invoice_status_enum = PgEnum(InvoiceStatus, name="invoice_status", create_type=True)
+
+
 class BillingEntity(Base):
     __tablename__ = "billing_entities"
 
@@ -132,12 +153,12 @@ class BillingEntity(Base):
     # Legal Data
     entity_name: Mapped[str] = mapped_column(String(255), nullable=False)
     country: Mapped[str] = mapped_column(String(100), nullable=False)
-    tax_id_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    tax_identification_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     vat_registered: Mapped[bool] = mapped_column(Boolean, default=False)
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Banking Details
-    encrypted_banking_details: Mapped[str | None] = mapped_column(Text, nullable=True)
+    banking_details: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # History Control
     effective_from: Mapped[date] = mapped_column(Date, nullable=False)
@@ -150,3 +171,45 @@ class BillingEntity(Base):
 
     # Relationships
     partner: Mapped["Partner"] = relationship("Partner", back_populates="billing_entities")
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    partner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False
+    )
+    billing_entity_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("billing_entities.id"), nullable=True
+    )
+
+    invoice_type: Mapped[InvoiceType] = mapped_column("type", invoice_type_enum, nullable=False)
+    invoice_reference: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    period: Mapped[str] = mapped_column(String(50), nullable=False)
+    currency: Mapped[str] = mapped_column(String(10), nullable=False)
+
+    net_amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
+    vat_amount: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
+    gross_total: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
+    tax_rate: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    pdf_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    status: Mapped[InvoiceStatus] = mapped_column(
+        invoice_status_enum, nullable=False, default=InvoiceStatus.Sent
+    )
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    scheduled_payment_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    partner: Mapped["Partner"] = relationship("Partner", foreign_keys=[partner_id])
+    billing_entity: Mapped["BillingEntity | None"] = relationship("BillingEntity", foreign_keys=[billing_entity_id])

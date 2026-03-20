@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Partner Registration — DevExpert AI{% endblock %}
+
+{% block extra_head %}
+<style>
+    .register-wrapper {
+        max-width: 620px;
+        margin: 0 auto;
+    }
+
+    .register-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 0.25rem;
+    }
+
+    .register-subtitle {
+        color: #a0a3b1;
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+    }
+
+    .field-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .field-group .form-label {
+        color: #c0c3d4;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 0.35rem;
+    }
+
+    .field-group .form-control,
+    .field-group .form-select {
+        font-size: 0.95rem;
+        height: 48px;
+    }
+
+    .field-group textarea.form-control {
+        height: auto;
+    }
+
+    .required-star {
+        color: var(--accent);
+        margin-left: 2px;
+    }
+
+    .divider {
+        border-color: #2d2f45;
+        margin: 1.75rem 0;
+    }
+
+    .submit-btn {
+        height: 50px;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+    }
+
+    .form-text {
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-wrapper">
+
+    <h1 class="register-title">Become a Partner</h1>
+    <p class="register-subtitle">Fill in the form below and our team will review your application.</p>
+
+    {% if error %}
+    <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body p-4 p-md-5">
+            <form method="post" action="/register" novalidate>
+
+                <!-- Name -->
+                <div class="field-group">
+                    <label for="name" class="form-label">Full Name <span class="required-star">*</span></label>
+                    <input
+                        type="text"
+                        class="form-control {% if errors.name %}is-invalid{% endif %}"
+                        id="name"
+                        name="name"
+                        value="{{ form.name or '' }}"
+                        placeholder="Jane Doe"
+                        required
+                    >
+                    {% if errors.name %}
+                    <div class="invalid-feedback">{{ errors.name }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div class="field-group">
+                    <label for="email" class="form-label">Email Address <span class="required-star">*</span></label>
+                    <input
+                        type="email"
+                        class="form-control {% if errors.email %}is-invalid{% endif %}"
+                        id="email"
+                        name="email"
+                        value="{{ form.email or '' }}"
+                        placeholder="jane@company.com"
+                        required
+                    >
+                    {% if errors.email %}
+                    <div class="invalid-feedback">{{ errors.email }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Company -->
+                <div class="field-group">
+                    <label for="company_name" class="form-label">Company <span class="required-star">*</span></label>
+                    <input
+                        type="text"
+                        class="form-control {% if errors.company_name %}is-invalid{% endif %}"
+                        id="company_name"
+                        name="company_name"
+                        value="{{ form.company_name or '' }}"
+                        placeholder="Acme Corp"
+                        required
+                    >
+                    {% if errors.company_name %}
+                    <div class="invalid-feedback">{{ errors.company_name }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Country -->
+                <div class="field-group">
+                    <label for="country" class="form-label">Country <span class="required-star">*</span></label>
+                    <select
+                        class="form-select {% if errors.country %}is-invalid{% endif %}"
+                        id="country"
+                        name="country"
+                        required
+                    >
+                        <option value="" disabled {% if not form.country %}selected{% endif %}>Select a country…</option>
+                        {% for code, label in countries %}
+                        <option value="{{ code }}" {% if form.country == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.country %}
+                    <div class="invalid-feedback">{{ errors.country }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Language Preference -->
+                <div class="field-group">
+                    <label for="language_preference" class="form-label">Preferred Language</label>
+                    <select class="form-select" id="language_preference" name="language_preference">
+                        {% for code, label in languages %}
+                        <option value="{{ code }}" {% if (form.language_preference or 'en') == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Collaboration Reason -->
+                <div class="field-group mb-4">
+                    <label for="collaboration_reason" class="form-label">How do you plan to collaborate with us?</label>
+                    <textarea
+                        class="form-control"
+                        id="collaboration_reason"
+                        name="collaboration_reason"
+                        rows="4"
+                        placeholder="Briefly describe your business model and how you see a collaboration with DevExpert AI…"
+                    >{{ form.collaboration_reason or '' }}</textarea>
+                    <div class="form-text mt-1">Optional — helps us process your application faster.</div>
+                </div>
+
+                <hr class="divider">
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary submit-btn">
+                        <i class="bi bi-send me-2"></i>Submit Application
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

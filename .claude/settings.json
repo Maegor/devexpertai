@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv add:*)",
+      "Bash(/home/jomolero/.local/bin/uv add:*)",
+      "Bash(.venv/bin/python -c:*)",
+      "Bash(.venv/bin/python -m:*)",
+      "Bash(.venv/bin/python seeds/:*)",
+      "Bash(.venv/bin/pytest:*)",
+      "Bash(/home/jomolero/devexpertai/devexpertai/.venv/bin/python -c:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)"
+    ]
+  }
+}

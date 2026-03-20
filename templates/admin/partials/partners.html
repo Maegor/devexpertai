@@ -1,0 +1,50 @@
+<div class="content-header">
+    <h1><i class="bi bi-people me-2" style="color: var(--accent);"></i>Partners</h1>
+    <p>{{ partners | length }} registro{{ 's' if partners | length != 1 else '' }} encontrado{{ 's' if partners | length != 1 else '' }}</p>
+</div>
+
+<div class="data-card">
+    {% if partners %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in partners %}
+            <tr>
+                <td>
+                    <div style="font-weight: 500;">{{ p.name }}</div>
+                    {% if p.company_name %}
+                    <div style="font-size: 0.775rem; color: var(--text-muted);">{{ p.company_name }}</div>
+                    {% endif %}
+                </td>
+                <td style="color: var(--text-muted);">{{ p.email }}</td>
+                <td>
+                    {% set s = p.status.value %}
+                    {% if s == 'Active' %}
+                        <span class="status-badge badge-active">{{ s }}</span>
+                    {% elif s == 'Pending Review' %}
+                        <span class="status-badge badge-pending">{{ s }}</span>
+                    {% elif s == 'Suspended' %}
+                        <span class="status-badge badge-suspended">{{ s }}</span>
+                    {% elif s == 'Inactive' %}
+                        <span class="status-badge badge-inactive">{{ s }}</span>
+                    {% else %}
+                        <span class="status-badge badge-rejected">{{ s }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-5" style="color: var(--text-muted);">
+        <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;"></i>
+        No hay partners registrados.
+    </div>
+    {% endif %}
+</div>

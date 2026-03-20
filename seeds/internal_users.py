@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import sys
 import os
 
@@ -42,8 +41,11 @@ USERS = [
 ]
 
 
+import bcrypt as _bcrypt
+
+
 def _hash(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
 
 
 async def run():
