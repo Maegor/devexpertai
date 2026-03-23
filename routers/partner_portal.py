@@ -1,14 +1,22 @@
 import uuid
+from datetime import date
+from decimal import Decimal, InvalidOperation
+from pathlib import Path
 
 import bcrypt as _bcrypt
-from fastapi import APIRouter, Request, Form, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, Form, Depends, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 import repositories.partner as partner_repo
 import repositories.invoice as invoice_repo
+import repositories.reward as reward_repo
+from models import InvoiceType
+from schemas.invoice import InvoiceCreate, InvoiceUpdate
+
+INVOICES_BASE = Path("/opt/devexpertai/invoices")
 
 router = APIRouter(prefix="/partners", tags=["partner-portal"])
 templates = Jinja2Templates(directory="templates")
@@ -105,6 +113,139 @@ async def invoices_partial(request: Request, db: AsyncSession = Depends(get_db))
     invoices_sorted = sorted(invoices, key=lambda i: i.created_at, reverse=True)
     return templates.TemplateResponse(
         request, "partners/partials/invoices.html", {"invoices": invoices_sorted}
+    )
+
+
+@router.get("/dashboard/rewards", response_class=HTMLResponse)
+async def rewards_partial(request: Request, db: AsyncSession = Depends(get_db)):
+    partner_id = get_current_partner_id(request)
+    if not partner_id:
+        return RedirectResponse(url="/partners/login", status_code=302)
+    rewards = await reward_repo.get_by_partner(db, uuid.UUID(partner_id))
+    rewards_sorted = sorted(rewards, key=lambda r: r.transaction_date, reverse=True)
+    return templates.TemplateResponse(
+        request, "partners/partials/rewards.html", {"rewards": rewards_sorted}
+    )
+
+
+@router.get("/dashboard/invoices/new", response_class=HTMLResponse)
+async def invoice_form_get(request: Request):
+    partner_id = get_current_partner_id(request)
+    if not partner_id:
+        return RedirectResponse(url="/partners/login", status_code=302)
+    return templates.TemplateResponse(
+        request, "partners/partials/invoice_form.html", {"error": None}
+    )
+
+
+@router.post("/dashboard/invoices/new", response_class=HTMLResponse)
+async def invoice_form_post(
+    request: Request,
+    invoice_type: str = Form(...),
+    invoice_reference: str = Form(...),
+    period_from: str = Form(...),
+    period_to: str = Form(...),
+    currency: str = Form(...),
+    net_amount: str = Form(...),
+    vat_amount: str = Form(""),
+    pdf_file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    partner_id = get_current_partner_id(request)
+    if not partner_id:
+        return RedirectResponse(url="/partners/login", status_code=302)
+
+    def _render_form(error: str):
+        return templates.TemplateResponse(
+            request, "partners/partials/invoice_form.html", {"error": error}
+        )
+
+    if not pdf_file.filename or not pdf_file.filename.lower().endswith(".pdf"):
+        return _render_form("Only PDF files are accepted.")
+
+    try:
+        p_from = date.fromisoformat(period_from)
+        p_to   = date.fromisoformat(period_to)
+    except ValueError:
+        return _render_form("Invalid period dates.")
+    if p_from > p_to:
+        return _render_form("Period start must be before or equal to end date.")
+
+    try:
+        net = Decimal(net_amount)
+    except InvalidOperation:
+        return _render_form("Invalid net amount.")
+
+    vat: Decimal | None = None
+    if vat_amount.strip():
+        try:
+            vat = Decimal(vat_amount)
+        except InvalidOperation:
+            return _render_form("Invalid VAT amount.")
+
+    gross = net + (vat or Decimal("0"))
+
+    try:
+        inv_type = InvoiceType(invoice_type)
+    except ValueError:
+        return _render_form("Invalid invoice type.")
+
+    # Create invoice first to get the DB-generated ID
+    data = InvoiceCreate(
+        partner_id=uuid.UUID(partner_id),
+        invoice_type=inv_type,
+        invoice_reference=invoice_reference.strip(),
+        period_from=p_from,
+        period_to=p_to,
+        currency=currency.strip(),
+        net_amount=net,
+        vat_amount=vat,
+        gross_total=gross,
+        pdf_path="",
+    )
+    invoice = await invoice_repo.create(db, data)
+
+    # Save PDF: /opt/devexpertai/invoices/<partner_id>/<invoice_id><filename>
+    dest_dir = INVOICES_BASE / partner_id
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = Path(pdf_file.filename).name
+    dest_path = dest_dir / f"{invoice.id}{safe_name}"
+    contents = await pdf_file.read()
+    dest_path.write_bytes(contents)
+
+    # Update pdf_path on the invoice record
+    await invoice_repo.update(db, invoice, InvoiceUpdate(pdf_path=str(dest_path)))
+
+    invoices = await invoice_repo.get_by_partner(db, uuid.UUID(partner_id))
+    invoices_sorted = sorted(invoices, key=lambda i: i.created_at, reverse=True)
+    return templates.TemplateResponse(
+        request,
+        "partners/partials/invoices.html",
+        {"invoices": invoices_sorted, "success": "Invoice submitted successfully."},
+    )
+
+
+@router.get("/dashboard/invoices/{invoice_id}/pdf")
+async def invoice_pdf_download(
+    request: Request,
+    invoice_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    partner_id = get_current_partner_id(request)
+    if not partner_id:
+        return RedirectResponse(url="/partners/login", status_code=302)
+    invoice = await invoice_repo.get_by_id(db, invoice_id)
+    if not invoice or str(invoice.partner_id) != partner_id:
+        return HTMLResponse("Not found.", status_code=404)
+    if not invoice.pdf_path:
+        return HTMLResponse("No PDF available.", status_code=404)
+    pdf_path = Path(invoice.pdf_path)
+    if not pdf_path.is_file():
+        return HTMLResponse("File not found on server.", status_code=404)
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=pdf_path.name,
     )
 
 

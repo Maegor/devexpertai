@@ -12,7 +12,8 @@ class InvoiceCreate(BaseModel):
     billing_entity_id: uuid.UUID | None = None
     invoice_type: InvoiceType
     invoice_reference: str
-    period: str
+    period_from: date
+    period_to: date
     currency: str
     net_amount: Decimal
     vat_amount: Decimal | None = None
@@ -28,7 +29,8 @@ class InvoiceUpdate(BaseModel):
     billing_entity_id: uuid.UUID | None = None
     invoice_type: InvoiceType | None = None
     invoice_reference: str | None = None
-    period: str | None = None
+    period_from: date | None = None
+    period_to: date | None = None
     currency: str | None = None
     net_amount: Decimal | None = None
     vat_amount: Decimal | None = None
@@ -46,7 +48,8 @@ class InvoiceResponse(BaseModel):
     billing_entity_id: uuid.UUID | None
     invoice_type: InvoiceType
     invoice_reference: str
-    period: str
+    period_from: date
+    period_to: date
     currency: str
     net_amount: Decimal
     vat_amount: Decimal | None

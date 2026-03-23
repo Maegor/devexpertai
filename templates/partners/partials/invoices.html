@@ -1,64 +1,21 @@
-<style>
-    .section-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--text);
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--border);
-    }
-    .invoice-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .invoice-table th {
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-dim);
-        padding: 0.6rem 0.9rem;
-        text-align: left;
-        border-bottom: 1px solid var(--border);
-    }
-    .invoice-table td {
-        padding: 0.75rem 0.9rem;
-        font-size: 0.875rem;
-        color: var(--text);
-        border-bottom: 1px solid var(--border);
-        vertical-align: middle;
-    }
-    .invoice-row {
-        cursor: pointer;
-        transition: background 0.12s;
-    }
-    .invoice-row:hover { background: var(--bg-hover); }
-    .invoice-row td:first-child { color: var(--accent); font-weight: 500; }
+<div class="section-title-row">
+    <div class="section-title" style="margin-bottom:0; border-bottom:none; padding-bottom:0;">
+        <i class="bi bi-receipt me-2"></i>Invoices
+    </div>
+    <button class="btn-new-invoice"
+            hx-get="/partners/dashboard/invoices/new"
+            hx-target="#content-area"
+            hx-swap="innerHTML">
+        <i class="bi bi-plus-lg"></i> New Invoice
+    </button>
+</div>
+<div style="border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;"></div>
 
-    .badge-inv-status {
-        display: inline-block;
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 0.2rem 0.65rem;
-        border-radius: 20px;
-    }
-    .inv-sent         { background: rgba(99,179,237,0.12); color: #63b3ed; }
-    .inv-under-review { background: rgba(251,191,36,0.12); color: #fbbf24; }
-    .inv-approved     { background: rgba(52,211,153,0.12); color: #34d399; }
-    .inv-pending-pay  { background: rgba(167,139,250,0.12); color: #a78bfa; }
-    .inv-paid         { background: rgba(52,211,153,0.15); color: #6ee7b7; }
-    .inv-rejected     { background: rgba(239,68,68,0.12); color: #ef4444; }
-    .inv-cancelled    { background: rgba(148,163,184,0.12); color: #94a3b8; }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: var(--text-dim);
-    }
-    .empty-state i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
-</style>
-
-<div class="section-title"><i class="bi bi-receipt me-2"></i>Invoices</div>
+{% if success %}
+<div class="form-alert form-alert-success">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ success }}
+</div>
+{% endif %}
 
 {% if invoices %}
 <div style="overflow-x: auto;">
@@ -67,11 +24,12 @@
         <tr>
             <th>Reference</th>
             <th>Period</th>
-            <th>Type</th>
+            <th style="text-align:center;">Type</th>
             <th>Currency</th>
             <th style="text-align:right;">Gross Total</th>
             <th>Status</th>
             <th>Date</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -81,8 +39,10 @@
             hx-target="#content-area"
             hx-swap="innerHTML">
             <td>{{ inv.invoice_reference }}</td>
-            <td>{{ inv.period }}</td>
-            <td>{{ inv.invoice_type.value }}</td>
+            <td style="white-space:nowrap; color: var(--text-muted); font-size:0.82rem;">
+                {{ inv.period_from.strftime('%Y-%m-%d') }} → {{ inv.period_to.strftime('%Y-%m-%d') }}
+            </td>
+            <td style="text-align:center;">{{ inv.invoice_type.value }}</td>
             <td>{{ inv.currency }}</td>
             <td style="text-align:right; font-variant-numeric: tabular-nums;">
                 {{ "%.2f"|format(inv.gross_total) }}
@@ -106,6 +66,16 @@
                 {% endif %}
             </td>
             <td style="color: var(--text-muted);">{{ inv.created_at.strftime('%Y-%m-%d') }}</td>
+            <td onclick="event.stopPropagation()">
+                {% if inv.pdf_path %}
+                <a class="btn-pdf-dl"
+                   href="/partners/dashboard/invoices/{{ inv.id }}/pdf"
+                   target="_blank"
+                   title="Download PDF">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                </a>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>

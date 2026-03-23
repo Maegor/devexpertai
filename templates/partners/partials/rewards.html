@@ -1,0 +1,57 @@
+<div class="section-title-row">
+    <div class="section-title" style="margin-bottom:0; border-bottom:none; padding-bottom:0;">
+        <i class="bi bi-gift me-2"></i>Rewards
+    </div>
+</div>
+<div style="border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;"></div>
+
+{% if rewards %}
+<div style="overflow-x: auto;">
+<table class="invoice-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Customer</th>
+            <th style="text-align:right;">Amount</th>
+            <th>Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rw in rewards %}
+        <tr>
+            <td style="white-space:nowrap; color: var(--text-muted); font-size:0.82rem;">
+                {{ rw.transaction_date.strftime('%Y-%m-%d') }}
+            </td>
+            <td>{{ rw.product_code }}</td>
+            <td style="color: var(--text-muted); font-size:0.82rem;">
+                {{ rw.customer_email or '—' }}
+            </td>
+            <td style="text-align:right; font-variant-numeric: tabular-nums;">
+                {{ rw.currency }} {{ "%.2f"|format(rw.amount) }}
+            </td>
+            <td>
+                {% set rt = rw.reward_type %}
+                {% if rt == 'Cashback' %}
+                    <span class="badge-inv-status inv-paid">{{ rt }}</span>
+                {% elif rt == 'Discount' %}
+                    <span class="badge-inv-status inv-approved">{{ rt }}</span>
+                {% elif rt == 'Bonus' %}
+                    <span class="badge-inv-status inv-pending-pay">{{ rt }}</span>
+                {% elif rt == 'Referral' %}
+                    <span class="badge-inv-status inv-under-review">{{ rt }}</span>
+                {% else %}
+                    <span class="badge-inv-status inv-sent">{{ rt }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-gift"></i>
+    No rewards found.
+</div>
+{% endif %}

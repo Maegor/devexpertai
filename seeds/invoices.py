@@ -1,4 +1,5 @@
 import asyncio
+import calendar
 import random
 import sys
 import os
@@ -11,11 +12,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from sqlalchemy import select
 from database import SessionLocal, engine, Base
 from models import Partner, BillingEntity, Invoice, InvoiceType, InvoiceStatus
-
-MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-]
 
 CURRENCIES = ["EUR", "USD", "GBP", "CHF", "CAD"]
 
@@ -92,7 +88,8 @@ async def run():
 
                 invoice_type = random.choice(list(InvoiceType))
                 status = random.choice(STATUS_POOL)
-                period = f"{MONTHS[month - 1]} {year}"
+                period_from = date(year, month, 1)
+                period_to   = date(year, month, calendar.monthrange(year, month)[1])
                 currency = random.choice(CURRENCIES)
                 pdf_path = f"invoices/{year}/{invoice_reference}.pdf"
 
@@ -109,7 +106,8 @@ async def run():
                     billing_entity_id=billing_entity_id,
                     invoice_type=invoice_type,
                     invoice_reference=invoice_reference,
-                    period=period,
+                    period_from=period_from,
+                    period_to=period_to,
                     currency=currency,
                     net_amount=net_amount,
                     vat_amount=vat_amount,
@@ -151,7 +149,8 @@ async def run():
 
             invoice_type = random.choice(list(InvoiceType))
             status = random.choice(STATUS_POOL)
-            period = f"{MONTHS[month - 1]} {year}"
+            period_from = date(year, month, 1)
+            period_to   = date(year, month, calendar.monthrange(year, month)[1])
             currency = random.choice(CURRENCIES)
             pdf_path = f"invoices/{year}/{invoice_reference}.pdf"
 
@@ -168,7 +167,8 @@ async def run():
                 billing_entity_id=billing_entity_id,
                 invoice_type=invoice_type,
                 invoice_reference=invoice_reference,
-                period=period,
+                period_from=period_from,
+                period_to=period_to,
                 currency=currency,
                 net_amount=net_amount,
                 vat_amount=vat_amount,

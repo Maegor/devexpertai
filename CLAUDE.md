@@ -68,7 +68,7 @@ Las siguientes operaciones están pre-aprobadas en `.claude/settings.json` y no 
 - `.venv/bin/python seeds/<script>` — ejecutar scripts de seed
 - `.venv/bin/pytest <args>` — ejecutar tests
 - `PGPASSWORD=... psql -U admin -d dxpromoter -h localhost -c <sql>` — ejecutar SQL directo en BD (migraciones manuales, limpieza de datos)
-
+- Escribir en la ruta del proyecto /home/jomolero/devexpertai/devexpertai sin restricciones (para crear nuevos archivos, editar código, etc.)
 ## Tests
 
 Tests use `httpx.AsyncClient` with `ASGITransport` (no real HTTP server). The `conftest.py` fixture overrides `get_db` with a test session that hits the real `dxpromoter` database and deletes test data after each test via `DELETE FROM <table>`. Tests are not isolated with a separate test database.

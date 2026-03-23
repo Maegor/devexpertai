@@ -189,7 +189,8 @@ class Invoice(Base):
 
     invoice_type: Mapped[InvoiceType] = mapped_column("type", invoice_type_enum, nullable=False)
     invoice_reference: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    period: Mapped[str] = mapped_column(String(50), nullable=False)
+    period_from: Mapped[date] = mapped_column(Date, nullable=False)
+    period_to: Mapped[date] = mapped_column(Date, nullable=False)
     currency: Mapped[str] = mapped_column(String(10), nullable=False)
 
     net_amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
@@ -214,3 +215,35 @@ class Invoice(Base):
     # Relationships
     partner: Mapped["Partner"] = relationship("Partner", foreign_keys=[partner_id])
     billing_entity: Mapped["BillingEntity | None"] = relationship("BillingEntity", foreign_keys=[billing_entity_id])
+
+
+class Reward(Base):
+    __tablename__ = "rewards"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    partner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False
+    )
+    transaction_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), nullable=False
+    )
+    product_code: Mapped[str] = mapped_column(String(100), nullable=False)
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    customer_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(10), nullable=False)
+    reward_type: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    partner: Mapped["Partner"] = relationship("Partner", foreign_keys=[partner_id])

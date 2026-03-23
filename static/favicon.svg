@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#0f1117"/>
+  <!-- Outer D shape -->
+  <path d="M7 8 L7 24 L16 24 Q26 24 26 16 Q26 8 16 8 Z" fill="#e8651a"/>
+  <!-- Inner cutout (hollow interior of D) -->
+  <path d="M11 12 L11 20 L15 20 Q21 20 21 16 Q21 12 15 12 Z" fill="#0f1117"/>
+  <!-- AI accent dot -->
+  <circle cx="26" cy="8" r="3.5" fill="#e8651a" opacity="0.45"/>
+</svg>

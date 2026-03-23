@@ -1,0 +1,209 @@
+<style>
+.flatpickr-calendar { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important; }
+.flatpickr-months, .flatpickr-weekdays { background: var(--bg-card) !important; }
+.flatpickr-month { color: var(--text) !important; fill: var(--text) !important; }
+.flatpickr-current-month, .flatpickr-current-month input.cur-year { color: var(--text) !important; font-size: 0.9rem !important; }
+.flatpickr-prev-month, .flatpickr-next-month { fill: var(--text-muted) !important; }
+.flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg { fill: var(--accent) !important; }
+span.flatpickr-weekday { color: var(--text-dim) !important; font-size: 0.7rem !important; }
+.flatpickr-day { color: var(--text) !important; border-radius: 6px !important; }
+.flatpickr-day:hover { background: var(--bg-hover) !important; border-color: transparent !important; }
+.flatpickr-day.today { border-color: var(--accent) !important; }
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
+.flatpickr-day.inRange { background: rgba(232,101,26,0.18) !important; border-color: transparent !important; box-shadow: -5px 0 0 rgba(232,101,26,0.18), 5px 0 0 rgba(232,101,26,0.18) !important; }
+.flatpickr-day.flatpickr-disabled { color: var(--text-dim) !important; }
+.numInputWrapper span { border-color: var(--border) !important; }
+.numInputWrapper span svg { fill: var(--text-muted) !important; }
+</style>
+
+<button class="back-btn"
+        hx-get="/partners/dashboard/invoices"
+        hx-target="#content-area"
+        hx-swap="innerHTML">
+    <i class="bi bi-arrow-left"></i> Back to Invoices
+</button>
+
+<div class="section-title"><i class="bi bi-plus-circle me-2"></i>New Invoice</div>
+
+{% if error %}
+<div class="form-alert form-alert-error">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+</div>
+{% endif %}
+
+<form id="invoice-form"
+      hx-post="/partners/dashboard/invoices/new"
+      hx-target="#content-area"
+      hx-swap="innerHTML"
+      hx-encoding="multipart/form-data">
+
+    <div class="inv-form-grid">
+
+        <!-- Tipo de factura -->
+        <div class="inv-form-group">
+            <label class="inv-form-label" for="invoice_type">Invoice Type <span class="req">*</span></label>
+            <select id="invoice_type" name="invoice_type" class="inv-form-control" required>
+                <option value="" disabled selected>Select type…</option>
+                <option value="Variable">Variable</option>
+                <option value="Fixed">Fixed</option>
+            </select>
+        </div>
+
+        <!-- Referencia -->
+        <div class="inv-form-group">
+            <label class="inv-form-label" for="invoice_reference">Invoice Reference <span class="req">*</span></label>
+            <input id="invoice_reference" name="invoice_reference" type="text"
+                   class="inv-form-control" placeholder="e.g. INV-2026-001" required>
+        </div>
+
+        <!-- Period (date range) -->
+        <div class="inv-form-group inv-period-group">
+            <label class="inv-form-label">Period <span class="req">*</span></label>
+            <div class="inv-daterange-wrap">
+                <i class="bi bi-calendar3 inv-cal-icon"></i>
+                <input id="period_range_display" type="text" class="inv-form-control inv-daterange-input"
+                       placeholder="Select date range…" readonly>
+                <i class="bi bi-x-circle inv-cal-clear" id="clear-range" title="Clear" style="display:none"></i>
+            </div>
+            <div id="date-range-error" class="form-alert form-alert-error" style="display:none; margin-top:0.5rem;">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Please select a date range.
+            </div>
+            <!-- Hidden inputs sent to the server -->
+            <input type="hidden" id="period_from" name="period_from">
+            <input type="hidden" id="period_to" name="period_to">
+        </div>
+
+        <!-- Moneda -->
+        <div class="inv-form-group">
+            <label class="inv-form-label" for="currency">Currency <span class="req">*</span></label>
+            <select id="currency" name="currency" class="inv-form-control" required>
+                <option value="" disabled selected>Select currency…</option>
+                <option value="EUR">EUR — Euro</option>
+                <option value="USD">USD — US Dollar</option>
+                <option value="GBP">GBP — British Pound</option>
+            </select>
+        </div>
+
+        <!-- Importe neto -->
+        <div class="inv-form-group">
+            <label class="inv-form-label" for="net_amount">Net Amount <span class="req">*</span></label>
+            <input id="net_amount" name="net_amount" type="number"
+                   class="inv-form-control" placeholder="0.00"
+                   min="0" step="0.01" required
+                   oninput="calcGross()">
+        </div>
+
+        <!-- VAT -->
+        <div class="inv-form-group">
+            <label class="inv-form-label" for="vat_amount">VAT Amount</label>
+            <input id="vat_amount" name="vat_amount" type="number"
+                   class="inv-form-control" placeholder="0.00"
+                   min="0" step="0.01"
+                   oninput="calcGross()">
+        </div>
+
+    </div>
+
+    <!-- Gross total (solo lectura) -->
+    <div class="inv-gross-row">
+        <span class="inv-gross-label">Gross Total</span>
+        <span class="inv-gross-val" id="gross-display">—</span>
+    </div>
+
+    <!-- PDF -->
+    <div class="inv-form-group inv-pdf-group">
+        <label class="inv-form-label" for="pdf_file">Invoice PDF <span class="req">*</span></label>
+        <label class="inv-file-label" id="pdf-label" for="pdf_file">
+            <i class="bi bi-file-earmark-pdf"></i>
+            <span id="pdf-filename">Choose PDF file…</span>
+        </label>
+        <input id="pdf_file" name="pdf_file" type="file"
+               accept="application/pdf,.pdf" class="inv-file-input" required
+               onchange="showFilename(this)">
+    </div>
+
+    <div class="inv-form-actions">
+        <button type="button" class="btn-inv-cancel"
+                hx-get="/partners/dashboard/invoices"
+                hx-target="#content-area"
+                hx-swap="innerHTML">
+            Cancel
+        </button>
+        <button type="button" class="btn-inv-submit" onclick="submitInvoice()">
+            <i class="bi bi-send me-1"></i>Submit Invoice
+        </button>
+    </div>
+
+</form>
+
+<script>
+// ── Flatpickr range ──────────────────────────────────────────────────────────
+var _fp = flatpickr('#period_range_display', {
+    mode: 'range',
+    dateFormat: 'Y-m-d',
+    allowInput: false,
+    disableMobile: true,
+    onChange: function(selectedDates) {
+        var clearBtn = document.getElementById('clear-range');
+        var errorDiv = document.getElementById('date-range-error');
+        if (selectedDates.length === 2) {
+            function fmt(d) { return d.toISOString().slice(0, 10); }
+            document.getElementById('period_from').value = fmt(selectedDates[0]);
+            document.getElementById('period_to').value   = fmt(selectedDates[1]);
+            clearBtn.style.display = 'block';
+            errorDiv.style.display = 'none';
+        } else {
+            document.getElementById('period_from').value = '';
+            document.getElementById('period_to').value   = '';
+            if (selectedDates.length === 0) clearBtn.style.display = 'none';
+        }
+    }
+});
+
+document.getElementById('clear-range').addEventListener('click', function() {
+    _fp.clear();
+    document.getElementById('period_from').value = '';
+    document.getElementById('period_to').value   = '';
+    this.style.display = 'none';
+});
+
+// ── Submit: validate dates, luego deja que htmx procese el form normalmente ──
+function submitInvoice() {
+    var from     = document.getElementById('period_from').value;
+    var to       = document.getElementById('period_to').value;
+    var errorDiv = document.getElementById('date-range-error');
+    if (!from || !to) {
+        errorDiv.style.display = 'flex';
+        document.getElementById('period_range_display').scrollIntoView({behavior: 'smooth', block: 'center'});
+        return;
+    }
+    errorDiv.style.display = 'none';
+    // requestSubmit() dispara validación nativa del browser Y el evento submit
+    // que htmx intercepta para enviar la petición AJAX
+    document.getElementById('invoice-form').requestSubmit();
+}
+
+// ── Gross total ──────────────────────────────────────────────────────────────
+function calcGross() {
+    var net      = parseFloat(document.getElementById('net_amount').value) || 0;
+    var vat      = parseFloat(document.getElementById('vat_amount').value) || 0;
+    var gross    = net + vat;
+    var currency = document.getElementById('currency').value || '';
+    document.getElementById('gross-display').textContent =
+        gross > 0 ? (currency ? currency + ' ' : '') + gross.toFixed(2) : '—';
+}
+document.getElementById('currency').addEventListener('change', calcGross);
+
+// ── File input label ─────────────────────────────────────────────────────────
+function showFilename(input) {
+    var label = document.getElementById('pdf-label');
+    var span  = document.getElementById('pdf-filename');
+    if (input.files && input.files[0]) {
+        span.textContent = input.files[0].name;
+        label.classList.add('has-file');
+    } else {
+        span.textContent = 'Choose PDF file…';
+        label.classList.remove('has-file');
+    }
+}
+</script>
