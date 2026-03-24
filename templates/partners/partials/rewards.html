@@ -5,6 +5,25 @@
 </div>
 <div style="border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;"></div>
 
+<!-- KPI cards -->
+<div class="reward-kpi-grid">
+    <div class="reward-kpi-card kpi-paid">
+        <div class="kpi-label"><i class="bi bi-check-circle-fill me-1"></i>Paid</div>
+        <div class="kpi-count">{{ kpis.paid.count }}</div>
+        <div class="kpi-amount">{{ "%.2f"|format(kpis.paid.total) }}</div>
+    </div>
+    <div class="reward-kpi-card kpi-pending">
+        <div class="kpi-label"><i class="bi bi-hourglass-split me-1"></i>Pending</div>
+        <div class="kpi-count">{{ kpis.pending.count }}</div>
+        <div class="kpi-amount">{{ "%.2f"|format(kpis.pending.total) }}</div>
+    </div>
+    <div class="reward-kpi-card kpi-rejected">
+        <div class="kpi-label"><i class="bi bi-x-circle-fill me-1"></i>Rejected</div>
+        <div class="kpi-count">{{ kpis.rejected.count }}</div>
+        <div class="kpi-amount">{{ "%.2f"|format(kpis.rejected.total) }}</div>
+    </div>
+</div>
+
 {% if rewards %}
 <div style="overflow-x: auto;">
 <table class="invoice-table">
@@ -15,6 +34,7 @@
             <th>Customer</th>
             <th style="text-align:right;">Amount</th>
             <th>Type</th>
+            <th>Status</th>
         </tr>
     </thead>
     <tbody>
@@ -42,6 +62,16 @@
                     <span class="badge-inv-status inv-under-review">{{ rt }}</span>
                 {% else %}
                     <span class="badge-inv-status inv-sent">{{ rt }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {% set st = rw.status.value %}
+                {% if st == 'Paid' %}
+                    <span class="badge-inv-status inv-paid">{{ st }}</span>
+                {% elif st == 'Pending' %}
+                    <span class="badge-inv-status inv-under-review">{{ st }}</span>
+                {% else %}
+                    <span class="badge-inv-status inv-rejected">{{ st }}</span>
                 {% endif %}
             </td>
         </tr>

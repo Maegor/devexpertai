@@ -1,6 +1,6 @@
 <button class="back-btn"
-        hx-get="/partners/dashboard/invoices"
-        hx-target="#content-area"
+        hx-get="{{ back_url | default('/partners/dashboard/invoices') }}"
+        hx-target="{{ back_target | default('#content-area') }}"
         hx-swap="innerHTML">
     <i class="bi bi-arrow-left"></i> Back to Invoices
 </button>
@@ -89,10 +89,67 @@
 </div>
 
 {% if invoice.rejection_reason %}
-<div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; padding: 1rem 1.1rem;">
+<div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; padding: 1rem 1.1rem; margin-bottom: 1.5rem;">
     <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #ef4444; margin-bottom: 0.4rem;">
         Rejection Reason
     </div>
     <div style="font-size: 0.875rem; color: #fca5a5;">{{ invoice.rejection_reason }}</div>
+</div>
+{% endif %}
+
+<!-- Rewards asociados -->
+<div class="section-title" style="font-size:0.95rem;">
+    <i class="bi bi-gift me-2"></i>Associated Rewards
+</div>
+
+{% if rewards %}
+<div style="overflow-x: auto;">
+<table class="invoice-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Customer</th>
+            <th style="text-align:right;">Amount</th>
+            <th>Type</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rw in rewards %}
+        <tr>
+            <td style="white-space:nowrap; color: var(--text-muted); font-size:0.82rem;">
+                {{ rw.transaction_date.strftime('%Y-%m-%d') }}
+            </td>
+            <td>{{ rw.product_code }}</td>
+            <td style="color: var(--text-muted); font-size:0.82rem;">{{ rw.customer_email or '—' }}</td>
+            <td style="text-align:right; font-variant-numeric: tabular-nums;">
+                {{ rw.currency }} {{ "%.2f"|format(rw.amount) }}
+            </td>
+            <td>
+                {% set rt = rw.reward_type %}
+                {% if rt == 'Cashback' %}<span class="badge-inv-status inv-paid">{{ rt }}</span>
+                {% elif rt == 'Discount' %}<span class="badge-inv-status inv-approved">{{ rt }}</span>
+                {% elif rt == 'Bonus' %}<span class="badge-inv-status inv-pending-pay">{{ rt }}</span>
+                {% elif rt == 'Referral' %}<span class="badge-inv-status inv-under-review">{{ rt }}</span>
+                {% else %}<span class="badge-inv-status inv-sent">{{ rt }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {% set st = rw.status.value %}
+                {% if st == 'Paid' %}<span class="badge-inv-status inv-paid">{{ st }}</span>
+                {% elif st == 'Pending' %}<span class="badge-inv-status inv-under-review">{{ st }}</span>
+                {% else %}<span class="badge-inv-status inv-rejected">{{ st }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state" style="padding: 1.5rem 0;">
+    <i class="bi bi-gift" style="font-size:1.5rem;"></i>
+    <span style="font-size:0.85rem;">No rewards linked to this invoice.</span>
 </div>
 {% endif %}

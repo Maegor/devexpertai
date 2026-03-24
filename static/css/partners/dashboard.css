@@ -523,3 +523,84 @@ body {
     transition: color 0.15s, background 0.15s;
 }
 .btn-pdf-dl:hover { color: #ef4444; background: rgba(239,68,68,0.10); }
+
+/* ── rewards.html — KPI cards ── */
+.reward-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.reward-kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    border-left-width: 3px;
+}
+
+.kpi-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.kpi-count {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.kpi-amount {
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.kpi-paid    { border-left-color: #6ee7b7; }
+.kpi-pending { border-left-color: #fbbf24; }
+.kpi-rejected{ border-left-color: #ef4444; }
+
+.kpi-paid    .kpi-label,
+.kpi-paid    .kpi-count  { color: #6ee7b7; }
+.kpi-pending .kpi-label,
+.kpi-pending .kpi-count  { color: #fbbf24; }
+.kpi-rejected .kpi-label,
+.kpi-rejected .kpi-count { color: #ef4444; }
+
+/* Deal KPI grid (5 columns) */
+.deal-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+@media (max-width: 900px) {
+    .deal-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 560px) {
+    .deal-kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.kpi-proposal        { border-left-color: #63b3ed; }
+.kpi-pending-closure { border-left-color: #fbbf24; }
+.kpi-closed          { border-left-color: #a78bfa; }
+.kpi-active-deal     { border-left-color: #34d399; }
+.kpi-completed       { border-left-color: #6ee7b7; }
+
+.kpi-proposal        .kpi-label,
+.kpi-proposal        .kpi-count  { color: #63b3ed; }
+.kpi-pending-closure .kpi-label,
+.kpi-pending-closure .kpi-count  { color: #fbbf24; }
+.kpi-closed          .kpi-label,
+.kpi-closed          .kpi-count  { color: #a78bfa; }
+.kpi-active-deal     .kpi-label,
+.kpi-active-deal     .kpi-count  { color: #34d399; }
+.kpi-completed       .kpi-label,
+.kpi-completed       .kpi-count  { color: #6ee7b7; }

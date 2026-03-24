@@ -1,0 +1,71 @@
+<button class="back-btn"
+        hx-get="/partners/dashboard/deals"
+        hx-target="#content-area"
+        hx-swap="innerHTML">
+    <i class="bi bi-arrow-left"></i> Back to Deals
+</button>
+
+<div class="invoice-header">
+    <div>
+        <div class="invoice-ref">{{ deal.description }}</div>
+        <div class="invoice-period">
+            {{ deal.start_month.strftime('%Y-%m') }} → {{ deal.end_month.strftime('%Y-%m') }}
+        </div>
+    </div>
+    <div>
+        {% set st = deal.status.value %}
+        {% if st == 'Proposal' %}
+            <span class="badge-inv-status inv-sent">{{ st }}</span>
+        {% elif st == 'Pending closure' %}
+            <span class="badge-inv-status inv-under-review">{{ st }}</span>
+        {% elif st == 'Closed' %}
+            <span class="badge-inv-status inv-pending-pay">{{ st }}</span>
+        {% elif st == 'Active' %}
+            <span class="badge-inv-status inv-approved">{{ st }}</span>
+        {% elif st == 'Completed' %}
+            <span class="badge-inv-status inv-paid">{{ st }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-item">
+        <div class="detail-label">Currency</div>
+        <div class="detail-value">{{ deal.currency }}</div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Start Month</div>
+        <div class="detail-value">{{ deal.start_month.strftime('%Y-%m') }}</div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">End Month</div>
+        <div class="detail-value">{{ deal.end_month.strftime('%Y-%m') }}</div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Total Cost</div>
+        <div class="detail-value" style="font-variant-numeric: tabular-nums;">
+            {{ deal.currency }} {{ "%.2f"|format(deal.total_cost) }}
+        </div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Status</div>
+        <div class="detail-value">
+            {% set st = deal.status.value %}
+            {% if st == 'Proposal' %}
+                <span class="badge-inv-status inv-sent">{{ st }}</span>
+            {% elif st == 'Pending closure' %}
+                <span class="badge-inv-status inv-under-review">{{ st }}</span>
+            {% elif st == 'Closed' %}
+                <span class="badge-inv-status inv-pending-pay">{{ st }}</span>
+            {% elif st == 'Active' %}
+                <span class="badge-inv-status inv-approved">{{ st }}</span>
+            {% elif st == 'Completed' %}
+                <span class="badge-inv-status inv-paid">{{ st }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Created</div>
+        <div class="detail-value">{{ deal.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+    </div>
+</div>

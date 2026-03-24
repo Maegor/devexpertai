@@ -17,6 +17,13 @@ async def get_by_id(db: AsyncSession, reward_id: uuid.UUID) -> Reward | None:
     return result.scalar_one_or_none()
 
 
+async def get_by_invoice(db: AsyncSession, invoice_id: uuid.UUID) -> list[Reward]:
+    result = await db.execute(
+        select(Reward).where(Reward.invoice_id == invoice_id)
+    )
+    return result.scalars().all()
+
+
 async def get_by_partner(db: AsyncSession, partner_id: uuid.UUID) -> list[Reward]:
     result = await db.execute(
         select(Reward).where(Reward.partner_id == partner_id)

@@ -1,21 +1,50 @@
 <div class="list-header">
     <h2>Partners</h2>
-    <p>{{ partners | length }} registro{{ 's' if partners | length != 1 else '' }}</p>
+    <p id="partners-count">{{ partners | length }} registro{{ 's' if partners | length != 1 else '' }}</p>
+</div>
+
+<!-- Toolbar -->
+<div class="partners-toolbar">
+    <input class="partners-search" id="partnersSearch" type="text"
+           placeholder="Search by name or email…"
+           oninput="partnersFilter()">
+    <select class="partners-status-filter" id="partnersStatus" onchange="partnersFilter()">
+        <option value="">All statuses</option>
+        <option value="Active">Active</option>
+        <option value="Pending Review">Pending Review</option>
+        <option value="Suspended">Suspended</option>
+        <option value="Inactive">Inactive</option>
+        <option value="Rejected">Rejected</option>
+    </select>
+    <div class="partners-page-size">
+        <label for="partnersPageSize">Show</label>
+        <select id="partnersPageSize" onchange="partnersFilter()">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+        <span>per page</span>
+    </div>
 </div>
 
 <div class="data-table-wrap">
     {% if partners %}
-    <table class="data-table">
+    <table class="data-table" id="partnersTable">
         <thead>
             <tr>
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Estado</th>
+                <th></th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="partnersBody">
             {% for p in partners %}
-            <tr>
+            <tr class="partner-row"
+                hx-get="/admin/partners/{{ p.id }}/detail"
+                hx-target="#partners-main"
+                hx-swap="innerHTML"
+                style="cursor: pointer;">
                 <td>
                     <div class="partner-name">{{ p.name }}</div>
                     {% if p.company_name %}
@@ -37,6 +66,9 @@
                         <span class="status-pill s-rejected">{{ s }}</span>
                     {% endif %}
                 </td>
+                <td style="color: var(--text-dim); font-size: 0.85rem;">
+                    <i class="bi bi-chevron-right"></i>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -48,3 +80,108 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Pagination -->
+<div class="partners-pagination" id="partnersPagination"></div>
+
+<script>
+(function () {
+    const allRows = () => Array.from(document.querySelectorAll('#partnersBody tr'));
+    let currentPage = 1;
+
+    function pageSize() {
+        return parseInt(document.getElementById('partnersPageSize').value, 10);
+    }
+
+    function searchTerm() {
+        return document.getElementById('partnersSearch').value.toLowerCase();
+    }
+
+    function statusFilter() {
+        return document.getElementById('partnersStatus').value;
+    }
+
+    window.partnersFilter = function () {
+        currentPage = 1;
+        render();
+    };
+
+    function render() {
+        const term = searchTerm();
+        const size = pageSize();
+        const rows = allRows();
+
+        const status = statusFilter();
+        const visible = rows.filter(tr => {
+            const text = tr.innerText.toLowerCase();
+            const statusCell = tr.querySelectorAll('td')[2]?.innerText.trim() || '';
+            return (!term || text.includes(term)) && (!status || statusCell === status);
+        });
+
+        rows.forEach(tr => tr.style.display = 'none');
+
+        const totalPages = Math.max(1, Math.ceil(visible.length / size));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = (currentPage - 1) * size;
+        visible.slice(start, start + size).forEach(tr => tr.style.display = '');
+
+        document.getElementById('partners-count').textContent =
+            visible.length + ' registro' + (visible.length !== 1 ? 's' : '') +
+            ' encontrado' + (visible.length !== 1 ? 's' : '');
+
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        const el = document.getElementById('partnersPagination');
+        if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+        let html = '<div class="pg-info">Page ' + currentPage + ' of ' + totalPages + '</div>';
+        html += '<div class="pg-controls">';
+
+        html += '<button class="pg-btn" onclick="partnersGoTo(' + (currentPage - 1) + ')"' +
+                (currentPage === 1 ? ' disabled' : '') + '><i class="bi bi-chevron-left"></i></button>';
+
+        const delta = 2;
+        const pages = [];
+        for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
+            pages.push(i);
+        }
+        if (pages[0] > 1) {
+            html += '<button class="pg-btn" onclick="partnersGoTo(1)">1</button>';
+            if (pages[0] > 2) html += '<span class="pg-ellipsis">…</span>';
+        }
+        pages.forEach(p => {
+            html += '<button class="pg-btn' + (p === currentPage ? ' pg-active' : '') +
+                    '" onclick="partnersGoTo(' + p + ')">' + p + '</button>';
+        });
+        if (pages[pages.length - 1] < totalPages) {
+            if (pages[pages.length - 1] < totalPages - 1) html += '<span class="pg-ellipsis">…</span>';
+            html += '<button class="pg-btn" onclick="partnersGoTo(' + totalPages + ')">' + totalPages + '</button>';
+        }
+
+        html += '<button class="pg-btn" onclick="partnersGoTo(' + (currentPage + 1) + ')"' +
+                (currentPage === totalPages ? ' disabled' : '') + '><i class="bi bi-chevron-right"></i></button>';
+        html += '</div>';
+
+        el.innerHTML = html;
+    }
+
+    window.partnersGoTo = function (page) {
+        const term = searchTerm();
+        const size = pageSize();
+        const status = statusFilter();
+        const visible = allRows().filter(tr => {
+            const text = tr.innerText.toLowerCase();
+            const statusCell = tr.querySelectorAll('td')[2]?.innerText.trim() || '';
+            return (!term || text.includes(term)) && (!status || statusCell === status);
+        });
+        const totalPages = Math.max(1, Math.ceil(visible.length / size));
+        currentPage = Math.min(Math.max(1, page), totalPages);
+        render();
+    };
+
+    render();
+})();
+</script>

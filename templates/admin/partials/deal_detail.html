@@ -1,0 +1,77 @@
+<button class="back-btn"
+        hx-get="/admin/deals"
+        hx-target="#partners-main"
+        hx-swap="innerHTML">
+    <i class="bi bi-arrow-left"></i> Back to Deals
+</button>
+
+<div class="pd-header">
+    <div>
+        <h2 class="pd-name">{{ deal.description }}</h2>
+        <span class="pd-company">{{ partner.name if partner else '—' }}</span>
+    </div>
+    <div>
+        {% set st = deal.status.value %}
+        {% if st == 'Proposal' %}
+            <span class="status-pill s-proposal">{{ st }}</span>
+        {% elif st == 'Pending closure' %}
+            <span class="status-pill s-pending-closure">{{ st }}</span>
+        {% elif st == 'Closed' %}
+            <span class="status-pill s-closed">{{ st }}</span>
+        {% elif st == 'Active' %}
+            <span class="status-pill s-active">{{ st }}</span>
+        {% elif st == 'Completed' %}
+            <span class="status-pill s-completed">{{ st }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="pd-grid">
+    <div class="pd-item">
+        <div class="pd-label">Partner</div>
+        <div class="pd-value">{{ partner.name if partner else '—' }}</div>
+    </div>
+    <div class="pd-item">
+        <div class="pd-label">Currency</div>
+        <div class="pd-value">{{ deal.currency }}</div>
+    </div>
+    <div class="pd-item">
+        <div class="pd-label">Start Month</div>
+        <div class="pd-value">{{ deal.start_month.strftime('%Y-%m') }}</div>
+    </div>
+    <div class="pd-item">
+        <div class="pd-label">End Month</div>
+        <div class="pd-value">{{ deal.end_month.strftime('%Y-%m') }}</div>
+    </div>
+    <div class="pd-item">
+        <div class="pd-label">Total Cost</div>
+        <div class="pd-value" style="font-variant-numeric: tabular-nums;">
+            {{ deal.currency }} {{ "%.2f"|format(deal.total_cost) }}
+        </div>
+    </div>
+    <div class="pd-item">
+        <div class="pd-label">Status</div>
+        <div class="pd-value">
+            {% set st = deal.status.value %}
+            {% if st == 'Proposal' %}
+                <span class="status-pill s-proposal">{{ st }}</span>
+            {% elif st == 'Pending closure' %}
+                <span class="status-pill s-pending-closure">{{ st }}</span>
+            {% elif st == 'Closed' %}
+                <span class="status-pill s-closed">{{ st }}</span>
+            {% elif st == 'Active' %}
+                <span class="status-pill s-active">{{ st }}</span>
+            {% elif st == 'Completed' %}
+                <span class="status-pill s-completed">{{ st }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="pd-item">
+        <div class="pd-label">Created</div>
+        <div class="pd-value">{{ deal.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+    </div>
+    <div class="pd-item">
+        <div class="pd-label">Updated</div>
+        <div class="pd-value">{{ deal.updated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+    </div>
+</div>

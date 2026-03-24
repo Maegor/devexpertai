@@ -21,6 +21,15 @@
                 onclick="setSubNav(this)">
             <i class="bi bi-people"></i>Partners
         </button>
+
+        <button class="sub-nav-item {% if active_sub == 'deals' %}active{% endif %}"
+                id="subnav-deals"
+                hx-get="/admin/deals"
+                hx-target="#partners-main"
+                hx-swap="innerHTML"
+                onclick="setSubNav(this)">
+            <i class="bi bi-briefcase"></i>Deals
+        </button>
     </nav>
 
     <!-- Content -->

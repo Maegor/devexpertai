@@ -13,7 +13,8 @@ from database import get_db
 import repositories.partner as partner_repo
 import repositories.invoice as invoice_repo
 import repositories.reward as reward_repo
-from models import InvoiceType
+import repositories.partner_deal as deal_repo
+from models import InvoiceType, RewardStatus, PartnerDealStatus
 from schemas.invoice import InvoiceCreate, InvoiceUpdate
 
 INVOICES_BASE = Path("/opt/devexpertai/invoices")
@@ -123,8 +124,23 @@ async def rewards_partial(request: Request, db: AsyncSession = Depends(get_db)):
         return RedirectResponse(url="/partners/login", status_code=302)
     rewards = await reward_repo.get_by_partner(db, uuid.UUID(partner_id))
     rewards_sorted = sorted(rewards, key=lambda r: r.transaction_date, reverse=True)
+
+    def _kpi(status):
+        items = [r for r in rewards if r.status == status]
+        return {
+            "count": len(items),
+            "total": sum((r.amount for r in items), Decimal("0")),
+        }
+
+    kpis = {
+        "paid":     _kpi(RewardStatus.Paid),
+        "pending":  _kpi(RewardStatus.Pending),
+        "rejected": _kpi(RewardStatus.Rejected),
+    }
+
     return templates.TemplateResponse(
-        request, "partners/partials/rewards.html", {"rewards": rewards_sorted}
+        request, "partners/partials/rewards.html",
+        {"rewards": rewards_sorted, "kpis": kpis},
     )
 
 
@@ -261,6 +277,57 @@ async def invoice_detail_partial(
     invoice = await invoice_repo.get_by_id(db, invoice_id)
     if not invoice or str(invoice.partner_id) != partner_id:
         return HTMLResponse("<p class='text-danger'>Factura no encontrada.</p>", status_code=404)
+    rewards = await reward_repo.get_by_invoice(db, invoice_id)
+    rewards_sorted = sorted(rewards, key=lambda r: r.transaction_date, reverse=True)
     return templates.TemplateResponse(
-        request, "partners/partials/invoice_detail.html", {"invoice": invoice}
+        request, "partners/partials/invoice_detail.html",
+        {"invoice": invoice, "rewards": rewards_sorted}
+    )
+
+
+# ── Deals ─────────────────────────────────────────────────────────────────────
+
+@router.get("/dashboard/deals", response_class=HTMLResponse)
+async def deals_partial(request: Request, db: AsyncSession = Depends(get_db)):
+    partner_id = get_current_partner_id(request)
+    if not partner_id:
+        return RedirectResponse(url="/partners/login", status_code=302)
+    deals = await deal_repo.get_by_partner(db, uuid.UUID(partner_id))
+    deals_sorted = sorted(deals, key=lambda d: d.created_at, reverse=True)
+
+    def _kpi(status):
+        items = [d for d in deals if d.status == status]
+        return {
+            "count": len(items),
+            "total": sum((d.total_cost for d in items), Decimal("0")),
+        }
+
+    kpis = {
+        "proposal":        _kpi(PartnerDealStatus.Proposal),
+        "pending_closure": _kpi(PartnerDealStatus.PendingClosure),
+        "closed":          _kpi(PartnerDealStatus.Closed),
+        "active":          _kpi(PartnerDealStatus.Active),
+        "completed":       _kpi(PartnerDealStatus.Completed),
+    }
+
+    return templates.TemplateResponse(
+        request, "partners/partials/deals.html",
+        {"deals": deals_sorted, "kpis": kpis},
+    )
+
+
+@router.get("/dashboard/deals/{deal_id}", response_class=HTMLResponse)
+async def deal_detail_partial(
+    request: Request,
+    deal_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    partner_id = get_current_partner_id(request)
+    if not partner_id:
+        return RedirectResponse(url="/partners/login", status_code=302)
+    deal = await deal_repo.get_by_id(db, deal_id)
+    if not deal or str(deal.partner_id) != partner_id:
+        return HTMLResponse("<p class='text-danger'>Deal not found.</p>", status_code=404)
+    return templates.TemplateResponse(
+        request, "partners/partials/deal_detail.html", {"deal": deal}
     )

@@ -1,5 +1,6 @@
 import asyncio
 import random
+import uuid
 import sys
 import os
 from datetime import datetime
@@ -9,9 +10,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from collections import defaultdict
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from database import SessionLocal, engine, Base
-from models import Partner, Invoice, Reward, RewardStatus
+from models import Invoice, Reward, RewardStatus
+
+ACME_ID = uuid.UUID("be4341d9-d1c2-422c-8fb1-080a2e5e8b43")
 
 CURRENCIES = ["EUR", "USD", "GBP"]
 REWARD_TYPES = ["Cashback", "Discount", "Bonus", "Referral"]
@@ -28,31 +31,16 @@ async def run():
         await conn.run_sync(Base.metadata.create_all)
 
     async with SessionLocal() as session:
-        partners_result = await session.execute(select(Partner))
-        partners = partners_result.scalars().all()
+        # Get Acme Corp invoices for linking
+        invoices_result = await session.execute(
+            select(Invoice).where(Invoice.partner_id == ACME_ID)
+        )
+        acme_invoices = invoices_result.scalars().all()
 
-        if not partners:
-            print("ERROR: No hay partners. Ejecuta primero: .venv/bin/python seeds/partners.py")
-            return
-
-        invoices_result = await session.execute(select(Invoice))
-        invoices_by_partner = defaultdict(list)
-        for inv in invoices_result.scalars().all():
-            invoices_by_partner[inv.partner_id].append(inv)
-
-        # Verificar si ya existen rewards
-        count_result = await session.execute(select(func.count()).select_from(Reward))
-        existing_count = count_result.scalar()
-
-        if existing_count and existing_count > 0:
-            print(f"Ya existen {existing_count} rewards en la BD. No se duplican.")
-            return
-
-        print(f"Partners disponibles: {len(partners)}")
+        print(f"Acme Corp invoices disponibles: {len(acme_invoices)}")
 
         created = 0
-        for i in range(100):
-            partner = random.choice(partners)
+        for i in range(50):
             year = random.randint(2023, 2025)
             month = random.randint(1, 12)
             day = random.randint(1, 28)
@@ -64,11 +52,10 @@ async def run():
             currency = random.choice(CURRENCIES)
             reward_type = random.choice(REWARD_TYPES)
             status = random.choice(STATUS_POOL)
-            partner_invoices = invoices_by_partner.get(partner.id, [])
-            invoice_id = random.choice(partner_invoices).id if partner_invoices else None
+            invoice_id = random.choice(acme_invoices).id if acme_invoices else None
 
             reward = Reward(
-                partner_id=partner.id,
+                partner_id=ACME_ID,
                 invoice_id=invoice_id,
                 transaction_date=transaction_date,
                 product_code=product_code,
@@ -79,12 +66,12 @@ async def run():
                 status=status,
             )
             session.add(reward)
-            print(f"  creado: {product_code} | {partner.name} | {reward_type} | {currency} {amount}")
+            print(f"  creado: {product_code} | Acme Corp | {reward_type} | {currency} {amount}")
             created += 1
 
         await session.commit()
 
-    print(f"\nSeed completado: {created} rewards creados.")
+    print(f"\nSeed completado: {created} rewards creados para Acme Corp.")
 
 
 if __name__ == "__main__":

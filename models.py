@@ -217,6 +217,15 @@ class Invoice(Base):
     billing_entity: Mapped["BillingEntity | None"] = relationship("BillingEntity", foreign_keys=[billing_entity_id])
 
 
+class RewardStatus(str, enum.Enum):
+    Pending  = "Pending"
+    Paid     = "Paid"
+    Rejected = "Rejected"
+
+
+reward_status_enum = PgEnum(RewardStatus, name="reward_status", create_type=True)
+
+
 class Reward(Base):
     __tablename__ = "rewards"
 
@@ -235,8 +244,59 @@ class Reward(Base):
     )
     customer_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
+    invoice_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="SET NULL"), nullable=True
+    )
     currency: Mapped[str] = mapped_column(String(10), nullable=False)
     reward_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[RewardStatus] = mapped_column(
+        reward_status_enum, nullable=False, default=RewardStatus.Pending
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    partner: Mapped["Partner"] = relationship("Partner", foreign_keys=[partner_id])
+    invoice: Mapped["Invoice | None"] = relationship("Invoice", foreign_keys=[invoice_id])
+
+
+# ── Partner Deal ──────────────────────────────────────────────────────────────
+
+class PartnerDealStatus(str, enum.Enum):
+    Proposal       = "Proposal"
+    PendingClosure = "Pending closure"
+    Closed         = "Closed"
+    Active         = "Active"
+    Completed      = "Completed"
+
+
+partner_deal_status_enum = PgEnum(
+    PartnerDealStatus, name="partner_deal_status", create_type=True
+)
+
+
+class PartnerDeal(Base):
+    __tablename__ = "partner_deals"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    partner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False
+    )
+    description: Mapped[str] = mapped_column(String(255), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    status: Mapped[PartnerDealStatus] = mapped_column(
+        partner_deal_status_enum, nullable=False, default=PartnerDealStatus.Proposal
+    )
+    start_month: Mapped[date] = mapped_column(Date, nullable=False)
+    end_month: Mapped[date] = mapped_column(Date, nullable=False)
+    total_cost: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), server_default=func.now()

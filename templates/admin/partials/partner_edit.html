@@ -1,0 +1,81 @@
+<div class="pd-header">
+    <button class="back-btn"
+            hx-get="/admin/partners/{{ partner.id }}/detail"
+            hx-target="#partners-main"
+            hx-swap="innerHTML">
+        <i class="bi bi-arrow-left"></i> Back to Detail
+    </button>
+
+    <div class="pd-title-row">
+        <div>
+            <div class="pd-name">{{ partner.name }}</div>
+            {% if partner.company_name %}
+            <div class="pd-company">{{ partner.company_name }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="form-error-banner">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
+</div>
+{% endif %}
+
+<form hx-post="/admin/partners/{{ partner.id }}/edit"
+      hx-target="#partners-main"
+      hx-swap="innerHTML">
+
+    <div class="edit-grid">
+        <div class="edit-field">
+            <label class="edit-label" for="name">Name</label>
+            <input class="edit-input" type="text" id="name" name="name"
+                   value="{{ partner.name }}" required>
+        </div>
+
+        <div class="edit-field">
+            <label class="edit-label" for="email">Email</label>
+            <input class="edit-input" type="email" id="email" name="email"
+                   value="{{ partner.email }}" required>
+        </div>
+
+        <div class="edit-field">
+            <label class="edit-label" for="company_name">Company name</label>
+            <input class="edit-input" type="text" id="company_name" name="company_name"
+                   value="{{ partner.company_name or '' }}">
+        </div>
+
+        <div class="edit-field">
+            <label class="edit-label" for="website">Website</label>
+            <input class="edit-input" type="text" id="website" name="website"
+                   value="{{ partner.website or '' }}">
+        </div>
+
+        <div class="edit-field">
+            <label class="edit-label" for="country">Country</label>
+            <input class="edit-input" type="text" id="country" name="country"
+                   value="{{ partner.country or '' }}">
+        </div>
+
+        <div class="edit-field">
+            <label class="edit-label" for="status">Status</label>
+            <select class="edit-input edit-select" id="status" name="status">
+                {% for opt in status_options %}
+                <option value="{{ opt }}" {% if opt == partner.status.value %}selected{% endif %}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="edit-actions">
+        <button type="button" class="back-btn" style="margin-bottom:0;"
+                hx-get="/admin/partners/{{ partner.id }}/detail"
+                hx-target="#partners-main"
+                hx-swap="innerHTML">
+            Cancel
+        </button>
+        <button type="submit" class="save-btn">
+            <i class="bi bi-check-lg"></i> Save changes
+        </button>
+    </div>
+</form>

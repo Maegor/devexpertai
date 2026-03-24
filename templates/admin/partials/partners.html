@@ -1,11 +1,27 @@
 <div class="content-header">
     <h1><i class="bi bi-people me-2" style="color: var(--accent);"></i>Partners</h1>
-    <p>{{ partners | length }} registro{{ 's' if partners | length != 1 else '' }} encontrado{{ 's' if partners | length != 1 else '' }}</p>
+    <p id="partners-count"></p>
+</div>
+
+<!-- Toolbar -->
+<div class="partners-toolbar">
+    <input class="partners-search" id="partnersSearch" type="text"
+           placeholder="Search by name or email…"
+           oninput="partnersFilter()">
+    <div class="partners-page-size">
+        <label for="partnersPageSize">Show</label>
+        <select id="partnersPageSize" onchange="partnersFilter()">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+        <span>per page</span>
+    </div>
 </div>
 
 <div class="data-card">
     {% if partners %}
-    <table class="table">
+    <table class="table" id="partnersTable">
         <thead>
             <tr>
                 <th>Nombre</th>
@@ -13,7 +29,7 @@
                 <th>Estado</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="partnersBody">
             {% for p in partners %}
             <tr>
                 <td>
@@ -48,3 +64,106 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Pagination -->
+<div class="partners-pagination" id="partnersPagination"></div>
+
+<script>
+(function () {
+    const allRows = () => Array.from(document.querySelectorAll('#partnersBody tr'));
+    let currentPage = 1;
+
+    function pageSize() {
+        return parseInt(document.getElementById('partnersPageSize').value, 10);
+    }
+
+    function searchTerm() {
+        return document.getElementById('partnersSearch').value.toLowerCase();
+    }
+
+    window.partnersFilter = function () {
+        currentPage = 1;
+        render();
+    };
+
+    function render() {
+        const term = searchTerm();
+        const size = pageSize();
+        const rows = allRows();
+
+        // Filter
+        const visible = rows.filter(tr => {
+            const text = tr.innerText.toLowerCase();
+            return !term || text.includes(term);
+        });
+
+        // Hide all
+        rows.forEach(tr => tr.style.display = 'none');
+
+        // Paginate
+        const totalPages = Math.max(1, Math.ceil(visible.length / size));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = (currentPage - 1) * size;
+        visible.slice(start, start + size).forEach(tr => tr.style.display = '');
+
+        // Count label
+        document.getElementById('partners-count').textContent =
+            visible.length + ' registro' + (visible.length !== 1 ? 's' : '') +
+            ' encontrado' + (visible.length !== 1 ? 's' : '');
+
+        // Pagination controls
+        renderPagination(totalPages, visible.length);
+    }
+
+    function renderPagination(totalPages, totalItems) {
+        const el = document.getElementById('partnersPagination');
+        if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+        let html = '<div class="pg-info">Page ' + currentPage + ' of ' + totalPages + '</div>';
+        html += '<div class="pg-controls">';
+
+        html += '<button class="pg-btn" onclick="partnersGoTo(' + (currentPage - 1) + ')" ' +
+                (currentPage === 1 ? 'disabled' : '') + '>' +
+                '<i class="bi bi-chevron-left"></i></button>';
+
+        // Window of pages
+        const delta = 2;
+        const pages = [];
+        for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
+            pages.push(i);
+        }
+        if (pages[0] > 1) {
+            html += '<button class="pg-btn" onclick="partnersGoTo(1)">1</button>';
+            if (pages[0] > 2) html += '<span class="pg-ellipsis">…</span>';
+        }
+        pages.forEach(p => {
+            html += '<button class="pg-btn' + (p === currentPage ? ' pg-active' : '') +
+                    '" onclick="partnersGoTo(' + p + ')">' + p + '</button>';
+        });
+        if (pages[pages.length - 1] < totalPages) {
+            if (pages[pages.length - 1] < totalPages - 1) html += '<span class="pg-ellipsis">…</span>';
+            html += '<button class="pg-btn" onclick="partnersGoTo(' + totalPages + ')">' + totalPages + '</button>';
+        }
+
+        html += '<button class="pg-btn" onclick="partnersGoTo(' + (currentPage + 1) + ')" ' +
+                (currentPage === totalPages ? 'disabled' : '') + '>' +
+                '<i class="bi bi-chevron-right"></i></button>';
+        html += '</div>';
+
+        el.innerHTML = html;
+    }
+
+    window.partnersGoTo = function (page) {
+        const size = pageSize();
+        const term = searchTerm();
+        const visible = allRows().filter(tr => !term || tr.innerText.toLowerCase().includes(term));
+        const totalPages = Math.max(1, Math.ceil(visible.length / size));
+        currentPage = Math.min(Math.max(1, page), totalPages);
+        render();
+    };
+
+    // Init
+    render();
+})();
+</script>
