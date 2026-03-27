@@ -1,0 +1,38 @@
+<div class="section-layout">
+
+    <!-- Sub-sidebar -->
+    <nav class="sub-sidebar">
+        <div class="sub-sidebar-label">Partners</div>
+
+        <button class="sub-nav-item active"
+                id="subnav-partners"
+                hx-get="/sales/partners"
+                hx-target="#sales-main"
+                hx-swap="innerHTML"
+                onclick="setSubNav(this)">
+            <i class="bi bi-people"></i>Mis Partners
+        </button>
+
+        <button class="sub-nav-item"
+                id="subnav-invoices"
+                hx-get="/sales/invoices"
+                hx-target="#sales-main"
+                hx-swap="innerHTML"
+                onclick="setSubNav(this)">
+            <i class="bi bi-receipt"></i>Facturas
+        </button>
+    </nav>
+
+    <!-- Content: pre-renderizado desde el servidor, sin hx-trigger="load" -->
+    <div class="partners-main" id="sales-main">
+        {% include "sales/partials/partners.html" %}
+    </div>
+
+</div>
+
+<script>
+    function setSubNav(el) {
+        document.querySelectorAll('.sub-nav-item').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+    }
+</script>

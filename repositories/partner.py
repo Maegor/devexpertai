@@ -12,6 +12,13 @@ async def get_all(db: AsyncSession) -> list[Partner]:
     return result.scalars().all()
 
 
+async def get_by_sales_rep(db: AsyncSession, sales_rep_id: uuid.UUID) -> list[Partner]:
+    result = await db.execute(
+        select(Partner).where(Partner.assigned_sales_rep_id == sales_rep_id)
+    )
+    return result.scalars().all()
+
+
 async def get_by_id(db: AsyncSession, partner_id: uuid.UUID) -> Partner | None:
     result = await db.execute(select(Partner).where(Partner.id == partner_id))
     return result.scalar_one_or_none()

@@ -1,0 +1,66 @@
+<div class="list-header">
+    <h2><i class="bi bi-receipt me-2" style="color: var(--accent);"></i>Facturas</h2>
+    <p>{{ invoices | length }} factura{{ 's' if invoices | length != 1 else '' }}</p>
+</div>
+
+{% if invoices %}
+<div class="data-table-wrap" style="overflow-x: auto;">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Referencia</th>
+            <th>Partner</th>
+            <th>Período</th>
+            <th style="text-align:center;">Tipo</th>
+            <th>Moneda</th>
+            <th style="text-align:right;">Total</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for inv in invoices %}
+        <tr style="cursor:pointer;"
+            hx-get="/sales/invoices/{{ inv.id }}"
+            hx-target="#sales-main"
+            hx-swap="innerHTML">
+            <td style="font-weight:500;">{{ inv.invoice_reference }}</td>
+            <td style="color:var(--text-muted); font-size:0.82rem;">
+                {{ partner_map.get(inv.partner_id | string, '—') }}
+            </td>
+            <td style="white-space:nowrap; color:var(--text-muted); font-size:0.82rem;">
+                {{ inv.period_from.strftime('%Y-%m-%d') }} → {{ inv.period_to.strftime('%Y-%m-%d') }}
+            </td>
+            <td style="text-align:center; color:var(--text-muted); font-size:0.82rem;">
+                {{ inv.invoice_type.value }}
+            </td>
+            <td>{{ inv.currency }}</td>
+            <td style="text-align:right; font-variant-numeric:tabular-nums; font-weight:600;">
+                {{ "%.2f"|format(inv.gross_total) }}
+            </td>
+            <td>
+                {% set st = inv.status.value %}
+                {% if st == 'Sent' %}<span class="badge-inv-status inv-sent">{{ st }}</span>
+                {% elif st == 'Under review' %}<span class="badge-inv-status inv-under-review">{{ st }}</span>
+                {% elif st == 'Approved' %}<span class="badge-inv-status inv-approved">{{ st }}</span>
+                {% elif st == 'Pending payment' %}<span class="badge-inv-status inv-pending-pay">{{ st }}</span>
+                {% elif st == 'Paid' %}<span class="badge-inv-status inv-paid">{{ st }}</span>
+                {% elif st == 'Rejected' %}<span class="badge-inv-status inv-rejected">{{ st }}</span>
+                {% else %}<span class="badge-inv-status inv-cancelled">{{ st }}</span>
+                {% endif %}
+            </td>
+            <td style="color:var(--text-muted); font-size:0.82rem; white-space:nowrap;">
+                {{ inv.created_at.strftime('%Y-%m-%d') }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-receipt"></i>
+    <span>No hay facturas para tus partners todavía.</span>
+</div>
+{% endif %}
+

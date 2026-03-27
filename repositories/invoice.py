@@ -24,6 +24,15 @@ async def get_by_partner(db: AsyncSession, partner_id: uuid.UUID) -> list[Invoic
     return result.scalars().all()
 
 
+async def get_by_partners(db: AsyncSession, partner_ids: list[uuid.UUID]) -> list[Invoice]:
+    if not partner_ids:
+        return []
+    result = await db.execute(
+        select(Invoice).where(Invoice.partner_id.in_(partner_ids))
+    )
+    return result.scalars().all()
+
+
 async def create(db: AsyncSession, data: InvoiceCreate) -> Invoice:
     invoice = Invoice(**data.model_dump())
     db.add(invoice)
