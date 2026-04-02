@@ -1,0 +1,40 @@
+{% if leads %}
+<div class="data-table-wrap" style="margin-bottom: 2rem;">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Start date</th>
+            <th>End date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lead in leads %}
+        <tr style="cursor:pointer;"
+            hx-get="/admin/partners/{{ partner_id }}/leads/{{ lead.id }}"
+            hx-target="#partners-main"
+            hx-swap="innerHTML">
+            <td style="font-weight:500;">{{ lead.name }}</td>
+            <td style="color:var(--text-muted);font-size:0.82rem;">{{ lead.email }}</td>
+            <td style="white-space:nowrap;color:var(--text-muted);font-size:0.82rem;">{{ lead.start_date.strftime('%Y-%m-%d') }}</td>
+            <td style="white-space:nowrap;color:var(--text-muted);font-size:0.82rem;">{{ lead.end_date.strftime('%Y-%m-%d') if lead.end_date else '—' }}</td>
+            <td>
+                {% if lead.status.value == 'active' %}
+                    <span class="status-pill s-active">Active</span>
+                {% else %}
+                    <span class="status-pill s-inactive">Deleted</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state" style="padding:1.5rem 0;">
+    <i class="bi bi-person-lines-fill"></i>
+    <span style="font-size:0.85rem;">No leads yet.</span>
+</div>
+{% endif %}

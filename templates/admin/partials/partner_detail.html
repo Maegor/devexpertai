@@ -145,6 +145,18 @@
 </div>
 {% endif %}
 
+<!-- Leads -->
+<div class="pd-section-title"><i class="bi bi-person-lines-fill me-2"></i>Leads</div>
+
+<div id="partner-leads-section"
+     hx-get="/admin/partners/{{ partner.id }}/leads"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    <div class="empty-state" style="padding:1.5rem 0;">
+        <span style="font-size:0.85rem;">Loading leads…</span>
+    </div>
+</div>
+
 <!-- Rewards -->
 <div class="pd-section-title"><i class="bi bi-gift me-2"></i>Rewards</div>
 
