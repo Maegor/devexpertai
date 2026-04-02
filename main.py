@@ -7,6 +7,7 @@ from routers import internal_user, partner, billing_entity, web, invoice, reward
 from routers import admin
 from routers import partner_portal
 from routers import sales
+from routers import lead
 
 
 @asynccontextmanager
@@ -27,6 +28,7 @@ app.include_router(partner.router, prefix="/api")
 app.include_router(billing_entity.router, prefix="/api")
 app.include_router(invoice.router, prefix="/api")
 app.include_router(reward.router, prefix="/api")
+app.include_router(lead.router)
 app.include_router(web.router)
 app.include_router(admin.router)
 app.include_router(partner_portal.router)
