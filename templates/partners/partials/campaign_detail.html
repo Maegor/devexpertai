@@ -1,0 +1,94 @@
+<button class="back-btn"
+        hx-get="/partners/dashboard/campaigns"
+        hx-target="#content-area"
+        hx-swap="innerHTML">
+    <i class="bi bi-arrow-left"></i> Back to Campaigns
+</button>
+
+<div class="invoice-header">
+    <div>
+        <div class="invoice-ref">{{ pc.campaign.name }}</div>
+        <div class="invoice-period">{{ pc.campaign.description }}</div>
+    </div>
+    <div>
+        {% set st = pc.status.value %}
+        {% if st == 'active' %}
+            <span class="badge-inv-status inv-approved">{{ st }}</span>
+        {% elif st == 'pending' %}
+            <span class="badge-inv-status inv-sent">{{ st }}</span>
+        {% elif st == 'cancelled' %}
+            <span class="badge-inv-status inv-rejected">{{ st }}</span>
+        {% elif st == 'finished' %}
+            <span class="badge-inv-status inv-paid">{{ st }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-item">
+        <div class="detail-label">Campaign Coupon</div>
+        <div class="detail-value">{{ pc.campaign.coupon }}</div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Your Coupon</div>
+        <div class="detail-value">{{ pc.coupon or '—' }}</div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Campaign Status</div>
+        <div class="detail-value">
+            {% set cst = pc.campaign.status.value %}
+            {% if cst == 'active' %}
+                <span class="badge-inv-status inv-approved">{{ cst }}</span>
+            {% elif cst == 'pending' %}
+                <span class="badge-inv-status inv-sent">{{ cst }}</span>
+            {% elif cst == 'cancelled' %}
+                <span class="badge-inv-status inv-rejected">{{ cst }}</span>
+            {% elif cst == 'finished' %}
+                <span class="badge-inv-status inv-paid">{{ cst }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Your Status</div>
+        <div class="detail-value">
+            {% set st = pc.status.value %}
+            {% if st == 'active' %}
+                <span class="badge-inv-status inv-approved">{{ st }}</span>
+            {% elif st == 'pending' %}
+                <span class="badge-inv-status inv-sent">{{ st }}</span>
+            {% elif st == 'cancelled' %}
+                <span class="badge-inv-status inv-rejected">{{ st }}</span>
+            {% elif st == 'finished' %}
+                <span class="badge-inv-status inv-paid">{{ st }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Campaign Start</div>
+        <div class="detail-value">
+            {% if pc.campaign.start_date %}{{ pc.campaign.start_date.strftime('%Y-%m-%d') }}{% else %}—{% endif %}
+        </div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Campaign End</div>
+        <div class="detail-value">
+            {% if pc.campaign.end_date %}{{ pc.campaign.end_date.strftime('%Y-%m-%d') }}{% else %}—{% endif %}
+        </div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Your Start Date</div>
+        <div class="detail-value">
+            {% if pc.start_date %}{{ pc.start_date.strftime('%Y-%m-%d') }}{% else %}—{% endif %}
+        </div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Your End Date</div>
+        <div class="detail-value">
+            {% if pc.end_date %}{{ pc.end_date.strftime('%Y-%m-%d') }}{% else %}—{% endif %}
+        </div>
+    </div>
+    <div class="detail-item">
+        <div class="detail-label">Joined</div>
+        <div class="detail-value">{{ pc.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+    </div>
+</div>

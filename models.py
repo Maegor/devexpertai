@@ -118,6 +118,7 @@ class Partner(Base):
     parent: Mapped["Partner | None"] = relationship("Partner", remote_side="Partner.id", foreign_keys=[parent_partner_id])
     assigned_sales_rep: Mapped["InternalUser | None"] = relationship("InternalUser", foreign_keys=[assigned_sales_rep_id])
     billing_entities: Mapped[list["BillingEntity"]] = relationship("BillingEntity", back_populates="partner", cascade="all, delete-orphan")
+    partner_campaigns: Mapped[list["PartnerCampaign"]] = relationship("PartnerCampaign", back_populates="partner", cascade="all, delete-orphan")
 
 
 class InvoiceType(str, enum.Enum):
@@ -307,3 +308,84 @@ class PartnerDeal(Base):
 
     # Relationships
     partner: Mapped["Partner"] = relationship("Partner", foreign_keys=[partner_id])
+
+
+# ── Campaign ──────────────────────────────────────────────────────────────────
+
+class CampaignStatus(str, enum.Enum):
+    pending   = "pending"
+    active    = "active"
+    cancelled = "cancelled"
+    finished  = "finished"
+
+
+campaign_status_enum = PgEnum(CampaignStatus, name="campaign_status", create_type=True)
+
+
+class PartnerCampaignStatus(str, enum.Enum):
+    pending   = "pending"
+    active    = "active"
+    cancelled = "cancelled"
+    finished  = "finished"
+
+
+partner_campaign_status_enum = PgEnum(
+    PartnerCampaignStatus, name="partner_campaign_status", create_type=True
+)
+
+
+class Campaign(Base):
+    __tablename__ = "campaigns"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(String(255), nullable=False)
+    coupon: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[CampaignStatus] = mapped_column(campaign_status_enum, nullable=False)
+    start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    partner_campaigns: Mapped[list["PartnerCampaign"]] = relationship(
+        "PartnerCampaign", back_populates="campaign", cascade="all, delete-orphan"
+    )
+
+
+class PartnerCampaign(Base):
+    __tablename__ = "partner_campaigns"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    partner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False
+    )
+    campaign_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    coupon: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[PartnerCampaignStatus] = mapped_column(
+        partner_campaign_status_enum, nullable=False
+    )
+    start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+    end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    partner: Mapped["Partner"] = relationship("Partner", back_populates="partner_campaigns")
+    campaign: Mapped["Campaign"] = relationship("Campaign", back_populates="partner_campaigns")

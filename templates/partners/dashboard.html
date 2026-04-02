@@ -61,6 +61,14 @@
                     onclick="setNav(this)">
                 <i class="bi bi-briefcase"></i>Deals
             </button>
+            <button class="sidebar-item" id="nav-campaigns"
+                    hx-get="/partners/dashboard/campaigns"
+                    hx-target="#content-area"
+                    hx-swap="innerHTML"
+                    hx-indicator="#section-spinner"
+                    onclick="setNav(this)">
+                <i class="bi bi-megaphone"></i>Campaigns
+            </button>
         </nav>
 
         <!-- Main content -->

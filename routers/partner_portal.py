@@ -14,6 +14,7 @@ import repositories.partner as partner_repo
 import repositories.invoice as invoice_repo
 import repositories.reward as reward_repo
 import repositories.partner_deal as deal_repo
+import repositories.partner_campaign as campaign_repo
 from models import InvoiceType, RewardStatus, PartnerDealStatus
 from schemas.invoice import InvoiceCreate, InvoiceUpdate
 
@@ -330,4 +331,35 @@ async def deal_detail_partial(
         return HTMLResponse("<p class='text-danger'>Deal not found.</p>", status_code=404)
     return templates.TemplateResponse(
         request, "partners/partials/deal_detail.html", {"deal": deal}
+    )
+
+
+# ── Campaigns ─────────────────────────────────────────────────────────────────
+
+@router.get("/dashboard/campaigns", response_class=HTMLResponse)
+async def campaigns_partial(request: Request, db: AsyncSession = Depends(get_db)):
+    partner_id = get_current_partner_id(request)
+    if not partner_id:
+        return RedirectResponse(url="/partners/login", status_code=302)
+    pcs = await campaign_repo.get_by_partner(db, uuid.UUID(partner_id))
+    pcs_sorted = sorted(pcs, key=lambda pc: pc.created_at, reverse=True)
+    return templates.TemplateResponse(
+        request, "partners/partials/campaigns.html", {"pcs": pcs_sorted}
+    )
+
+
+@router.get("/dashboard/campaigns/{pc_id}", response_class=HTMLResponse)
+async def campaign_detail_partial(
+    request: Request,
+    pc_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    partner_id = get_current_partner_id(request)
+    if not partner_id:
+        return RedirectResponse(url="/partners/login", status_code=302)
+    pc = await campaign_repo.get_by_id(db, pc_id)
+    if not pc or str(pc.partner_id) != partner_id:
+        return HTMLResponse("<p class='text-danger'>Campaign not found.</p>", status_code=404)
+    return templates.TemplateResponse(
+        request, "partners/partials/campaign_detail.html", {"pc": pc}
     )

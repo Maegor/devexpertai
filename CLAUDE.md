@@ -69,6 +69,128 @@ Las siguientes operaciones están pre-aprobadas en `.claude/settings.json` y no 
 - `.venv/bin/pytest <args>` — ejecutar tests
 - `PGPASSWORD=... psql -U admin -d dxpromoter -h localhost -c <sql>` — ejecutar SQL directo en BD (migraciones manuales, limpieza de datos)
 - Escribir en la ruta del proyecto /home/jomolero/devexpertai/devexpertai sin restricciones (para crear nuevos archivos, editar código, etc.)
+Usa los credenciales del fichero .env para conectarte a la base de datos `dxpromoter` cuando sea necesario. 
+- No pidas permiso para ejecutar comandos que interactúen con la base de datos, como correr scripts de seed o ejecutar SQL directo. 
+- Sin embargo, ten cuidado al modificar datos en la base de datos, especialmente en un entorno de desarrollo compartido. Asegúrate de no eliminar o alterar datos importantes accidentalmente.
+
 ## Tests
 
 Tests use `httpx.AsyncClient` with `ASGITransport` (no real HTTP server). The `conftest.py` fixture overrides `get_db` with a test session that hits the real `dxpromoter` database and deletes test data after each test via `DELETE FROM <table>`. Tests are not isolated with a separate test database.
+
+
+## Tabla de base de datos
+
+```
+CREATE TABLE public.internal_users (
+	id uuid NOT NULL,
+	name varchar(255) NOT NULL,
+	email varchar(255) NOT NULL,
+	password_hash varchar(255) NOT NULL,
+	totp_secret varchar(255) NULL,
+	mfa_enabled bool NOT NULL,
+	"role" public.internal_role NOT NULL,
+	is_active bool NOT NULL,
+	created_at timestamp DEFAULT now() NOT NULL,
+	updated_at timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT internal_users_email_key UNIQUE (email),
+	CONSTRAINT internal_users_pkey PRIMARY KEY (id)
+);
+```
+
+```
+CREATE TABLE public.invoices (
+	id uuid NOT NULL,
+	partner_id uuid NOT NULL,
+	billing_entity_id uuid NULL,
+	"type" public."invoice_type" NOT NULL,
+	invoice_reference varchar(100) NOT NULL,
+	currency varchar(10) NOT NULL,
+	net_amount numeric(15, 2) NOT NULL,
+	vat_amount numeric(15, 2) NULL,
+	gross_total numeric(15, 2) NOT NULL,
+	tax_rate varchar(50) NULL,
+	pdf_path varchar(500) NOT NULL,
+	status public."invoice_status" NOT NULL,
+	rejection_reason text NULL,
+	scheduled_payment_date date NULL,
+	created_at timestamp DEFAULT now() NOT NULL,
+	updated_at timestamp DEFAULT now() NOT NULL,
+	period_from date NOT NULL,
+	period_to date NOT NULL,
+	CONSTRAINT invoices_invoice_reference_key UNIQUE (invoice_reference),
+	CONSTRAINT invoices_pkey PRIMARY KEY (id),
+	CONSTRAINT invoices_billing_entity_id_fkey FOREIGN KEY (billing_entity_id) REFERENCES public.billing_entities(id),
+	CONSTRAINT invoices_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.partners(id) ON DELETE CASCADE
+);
+```
+
+```
+CREATE TABLE public.partner_deals (
+	id uuid NOT NULL,
+	partner_id uuid NOT NULL,
+	description varchar(255) NOT NULL,
+	currency varchar(3) NOT NULL,
+	status public."partner_deal_status" NOT NULL,
+	start_month date NOT NULL,
+	end_month date NOT NULL,
+	total_cost numeric(15, 2) NOT NULL,
+	created_at timestamp DEFAULT now() NOT NULL,
+	updated_at timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT partner_deals_pkey PRIMARY KEY (id),
+	CONSTRAINT partner_deals_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.partners(id) ON DELETE CASCADE
+);
+```
+
+```
+CREATE TABLE public.partners (
+	id uuid NOT NULL,
+	fp_promoter_id varchar(255) NULL,
+	parent_partner_id uuid NULL,
+	"name" varchar(255) NOT NULL,
+	email varchar(255) NOT NULL,
+	company_name varchar(255) NULL,
+	website varchar(255) NULL,
+	country varchar(100) NULL,
+	collaboration_reason text NULL,
+	assigned_sales_rep_id uuid NULL,
+	language_preference varchar(10) NOT NULL,
+	referral_enabled bool NOT NULL,
+	deals_enabled bool NOT NULL,
+	status public."partner_status" NOT NULL,
+	tc_version_accepted varchar(50) NULL,
+	tc_acceptance_date timestamp NULL,
+	tc_acceptance_ip varchar(45) NULL,
+	tc_accepted_by varchar(255) NULL,
+	qb_account_referral varchar(255) NULL,
+	qb_account_fixed varchar(255) NULL,
+	self_billing_enabled bool NOT NULL,
+	created_at timestamp DEFAULT now() NOT NULL,
+	updated_at timestamp DEFAULT now() NOT NULL,
+	password_hash varchar(255) NULL,
+	CONSTRAINT partners_email_key UNIQUE (email),
+	CONSTRAINT partners_pkey PRIMARY KEY (id),
+	CONSTRAINT partners_assigned_sales_rep_id_fkey FOREIGN KEY (assigned_sales_rep_id) REFERENCES public.internal_users(id),
+	CONSTRAINT partners_parent_partner_id_fkey FOREIGN KEY (parent_partner_id) REFERENCES public.partners(id)
+);
+```
+
+```
+CREATE TABLE public.rewards (
+	id uuid NOT NULL,
+	partner_id uuid NOT NULL,
+	transaction_date timestamp NOT NULL,
+	product_code varchar(100) NOT NULL,
+	customer_id uuid NULL,
+	customer_email varchar(255) NULL,
+	amount numeric(15, 2) NOT NULL,
+	currency varchar(10) NOT NULL,
+	reward_type varchar(100) NOT NULL,
+	created_at timestamp DEFAULT now() NOT NULL,
+	updated_at timestamp DEFAULT now() NOT NULL,
+	status public."reward_status" DEFAULT 'Pending'::reward_status NOT NULL,
+	invoice_id uuid NULL,
+	CONSTRAINT rewards_pkey PRIMARY KEY (id),
+	CONSTRAINT rewards_invoice_id_fkey FOREIGN KEY (invoice_id) REFERENCES public.invoices(id) ON DELETE SET NULL,
+	CONSTRAINT rewards_partner_id_fkey FOREIGN KEY (partner_id) REFERENCES public.partners(id) ON DELETE CASCADE
+);
+```

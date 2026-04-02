@@ -1,0 +1,56 @@
+<div class="section-title-row">
+    <div class="section-title" style="margin-bottom:0; border-bottom:none; padding-bottom:0;">
+        <i class="bi bi-megaphone me-2"></i>Campaigns
+    </div>
+</div>
+<div style="border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;"></div>
+
+{% if pcs %}
+<div style="overflow-x: auto;">
+<table class="invoice-table">
+    <thead>
+        <tr>
+            <th>Campaign</th>
+            <th>Coupon</th>
+            <th>Status</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pc in pcs %}
+        <tr style="cursor: pointer;"
+            hx-get="/partners/dashboard/campaigns/{{ pc.id }}"
+            hx-target="#content-area"
+            hx-swap="innerHTML">
+            <td>{{ pc.campaign.name }}</td>
+            <td>{{ pc.coupon or pc.campaign.coupon }}</td>
+            <td>
+                {% set st = pc.status.value %}
+                {% if st == 'active' %}
+                    <span class="badge-inv-status inv-approved">{{ st }}</span>
+                {% elif st == 'pending' %}
+                    <span class="badge-inv-status inv-sent">{{ st }}</span>
+                {% elif st == 'cancelled' %}
+                    <span class="badge-inv-status inv-rejected">{{ st }}</span>
+                {% elif st == 'finished' %}
+                    <span class="badge-inv-status inv-paid">{{ st }}</span>
+                {% endif %}
+            </td>
+            <td style="white-space:nowrap; color: var(--text-muted); font-size:0.82rem;">
+                {% if pc.start_date %}{{ pc.start_date.strftime('%Y-%m-%d') }}{% else %}—{% endif %}
+            </td>
+            <td style="white-space:nowrap; color: var(--text-muted); font-size:0.82rem;">
+                {% if pc.end_date %}{{ pc.end_date.strftime('%Y-%m-%d') }}{% else %}—{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-megaphone"></i>
+    No campaigns found.
+</div>
+{% endif %}
