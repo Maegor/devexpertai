@@ -119,6 +119,7 @@ class Partner(Base):
     assigned_sales_rep: Mapped["InternalUser | None"] = relationship("InternalUser", foreign_keys=[assigned_sales_rep_id])
     billing_entities: Mapped[list["BillingEntity"]] = relationship("BillingEntity", back_populates="partner", cascade="all, delete-orphan")
     partner_campaigns: Mapped[list["PartnerCampaign"]] = relationship("PartnerCampaign", back_populates="partner", cascade="all, delete-orphan")
+    leads: Mapped[list["Lead"]] = relationship("Lead", back_populates="partner", cascade="all, delete-orphan")
 
 
 class InvoiceType(str, enum.Enum):
@@ -389,3 +390,41 @@ class PartnerCampaign(Base):
     # Relationships
     partner: Mapped["Partner"] = relationship("Partner", back_populates="partner_campaigns")
     campaign: Mapped["Campaign"] = relationship("Campaign", back_populates="partner_campaigns")
+
+
+# ── Lead ──────────────────────────────────────────────────────────────────────
+
+class LeadStatus(str, enum.Enum):
+    Active = "Active"
+    Deleted = "Deleted"
+
+
+lead_status_enum = PgEnum(LeadStatus, name="lead_status", create_type=True)
+
+
+class Lead(Base):
+    __tablename__ = "leads"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    partner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    status: Mapped[LeadStatus] = mapped_column(
+        lead_status_enum, nullable=False, default=LeadStatus.Active
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    partner: Mapped["Partner"] = relationship("Partner", back_populates="leads")
