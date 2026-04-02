@@ -14,6 +14,7 @@ import repositories.partner as partner_repo
 import repositories.invoice as invoice_repo
 import repositories.reward as reward_repo
 import repositories.partner_deal as deal_repo
+import repositories.lead as lead_repo
 from schemas.partner import PartnerUpdate
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -243,6 +244,40 @@ async def partner_invoice_detail(
             "back_url": f"/admin/partners/{partner_id}/detail",
             "back_target": "#partners-main",
         },
+    )
+
+
+@router.get("/partners/{partner_id}/leads", response_class=HTMLResponse)
+async def partner_leads_list(
+    request: Request,
+    partner_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    if not get_current_user_id(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+    leads = await lead_repo.get_by_partner(db, partner_id)
+    leads_sorted = sorted(leads, key=lambda l: l.start_date, reverse=True)
+    return templates.TemplateResponse(
+        request, "admin/partials/partner_leads.html",
+        {"leads": leads_sorted, "partner_id": partner_id},
+    )
+
+
+@router.get("/partners/{partner_id}/leads/{lead_id}", response_class=HTMLResponse)
+async def partner_lead_detail(
+    request: Request,
+    partner_id: uuid.UUID,
+    lead_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    if not get_current_user_id(request):
+        return RedirectResponse(url="/admin/login", status_code=302)
+    lead = await lead_repo.get_by_id(db, lead_id)
+    if not lead or lead.partner_id != partner_id:
+        return HTMLResponse("<p style='color:#e85454;'>Lead not found.</p>", status_code=404)
+    return templates.TemplateResponse(
+        request, "admin/partials/lead_detail.html",
+        {"lead": lead, "partner_id": partner_id},
     )
 
 
